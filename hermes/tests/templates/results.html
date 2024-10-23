@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Results</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Results</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Person Name</th>
+                <th>Test Value 1</th>
+                <th>Test Value 2</th>
+                <th>Test Value 3</th>
+                <th>Test Value 4</th>
+                <th>Test Value 5</th>
+                <th>Test Value 6</th>
+                <th>Test Value 7</th>
+                <th>Test Value 8</th>
+                <th>Year</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+                <tr>
+                    <td>{{ result.person_name }}</td>
+                    <td>{{ result.test_value_1 }}</td>
+                    <td>{{ result.test_value_2 }}</td>
+                    <td>{{ result.test_value_3 }}</td>
+                    <td>{{ result.test_value_4 }}</td>
+                    <td>{{ result.test_value_5 }}</td>
+                    <td>{{ result.test_value_6 }}</td>
+                    <td>{{ result.test_value_7 }}</td>
+                    <td>{{ result.test_value_8 }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10">No results found.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

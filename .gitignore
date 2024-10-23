@@ -1,0 +1,5 @@
+/hermes/db.sqlite3
+/hermes/tests/migrations
+/hermes/tests/__pycache__
+/hermes/hermes/__pycache__
+/olympvenv
