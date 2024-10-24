@@ -23,7 +23,7 @@ class BraceForm(forms.ModelForm):
 class HexagonForm(forms.ModelForm):
     class Meta:
         model = TestResult
-        fields = ["hexagon_time_r", "hexagon_time_l"]
+        fields = ["hexagon_time_cw", "hexagon_time_ccw"]
 
 
 class MedicimbalForm(forms.ModelForm):
@@ -42,12 +42,12 @@ class YTestForm(forms.ModelForm):
     class Meta:
         model = TestResult
         fields = [
-            "y_test_lf_front",
-            "y_test_lf_left",
-            "y_test_lf_right",
-            "y_test_rf_front",
-            "y_test_rf_right",
-            "y_test_rf_left",
+            "y_test_ll_front",
+            "y_test_ll_left",
+            "y_test_ll_right",
+            "y_test_rl_front",
+            "y_test_rl_right",
+            "y_test_rl_left",
             "y_test_la_left",
             "y_test_la_front",
             "y_test_la_back",
