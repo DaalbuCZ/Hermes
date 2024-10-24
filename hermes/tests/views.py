@@ -1,22 +1,44 @@
 from django.shortcuts import render, redirect
-# from .forms import TestResultForm
-from .models import TestResult
+from .models import TestResult, Profile
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .forms import CustomProfileCreationForm
+from .models import Profile
 
-# def add_test_result(request):
-#     if request.method == "POST":
-#         form = TestResultForm(request.POST)
-#         if form.is_valid():
-#             test_result = form.save(commit=False)
-#             test_result.user = request.user  # Assign the current user
-#             test_result.save()
-#             return redirect('test_results')  # Redirect to a page showing test results
-#     else:
-#         form = TestResultForm()
-#     return render(request, 'add_test_result.html', {'form': form})
 
 def test_results(request):
     results = TestResult.objects.all()
-    return render(request, 'results.html', {'results': results})
+    return render(request, "results.html", {"results": results})
+
 
 def index(request):
-    return render(request, 'index.html')
+    return render(request, "index.html")
+
+#TODO: Check if user is an adjudicator
+# def is_adjudicator(user):
+#     return user.groups.filter(name='Adjudicators').exists()
+
+# # @login_required
+# def my_view(request):
+#     # Your view logic here
+#     return render(request, 'my_template.html')
+
+
+# # @login_required
+# @user_passes_test(is_adjudicator)
+def add_profile(request):
+    if request.method == "POST":
+        form = CustomProfileCreationForm(request.POST)
+        if form.is_valid():
+            profile = form.save(commit=False)  # Don't save yet
+            profile.save()  # Explicitly save the profile
+            return redirect("profile_list")
+
+    else:
+        form = CustomProfileCreationForm()
+
+    return render(request, "add_profile.html", {"form": form})
+
+
+def profile_list(request):
+    profiles = Profile.objects.all()
+    return render(request, "profile_list.html", {"profiles": profiles})

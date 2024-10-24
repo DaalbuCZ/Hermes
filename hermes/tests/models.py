@@ -1,10 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    person_name = models.CharField(max_length=100, default="user")
+    person_name = models.CharField(max_length=100)
     age = models.IntegerField()
     weight = models.IntegerField()
     height = models.IntegerField()
@@ -20,7 +18,7 @@ class Profile(models.Model):
     )
 
     def __str__(self):
-        return self.user.username
+        return self.person_name
 
 
 class TestResult(models.Model):
@@ -74,6 +72,5 @@ class TestResult(models.Model):
     max_hr = models.IntegerField()
 
 
-# def save(self, *args, **kwargs):
-#     self.points = self.calculate_points()
-#     super().save(*args, **kwargs)
+def save(self, *args, **kwargs):
+    super().save(*args, **kwargs)

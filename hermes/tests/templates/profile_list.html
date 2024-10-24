@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Profile List</h1>
+<ul>
+    {% for profile in profiles %}
+        <li>{{ profile.person_name }} (Age: {{ profile.age }}, Weight: {{ profile.weight }}, Height: {{ profile.height }})</li>
+    {% endfor %}
+</ul>
+{% endblock %}
