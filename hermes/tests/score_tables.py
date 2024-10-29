@@ -344,3 +344,39 @@ def calculate_score(age, sex, test, *args):
 
 # score = calculate_score(12, "M", "y_test", 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 # print(score)
+
+
+def calculate_beep_test_total_laps(level, laps):
+    match level:
+        case 1:
+            return laps + 7
+        case 2:
+            return laps + 15
+        case 3:
+            return laps + 23
+        case 4:
+            return laps + 32
+        case 5:
+            return laps + 41
+        case 6:
+            return laps + 51
+        case 7:
+            return laps + 61
+        case 8:
+            return laps + 72
+        case 9:
+            return laps + 83
+        case 10:
+            return laps + 94
+        case 11:
+            return laps + 106
+        case 12:
+            return laps + 118
+        case 13:
+            return laps + 131
+        case 14:
+            return laps + 144
+        case 15:
+            return laps + 157
+        case _:
+            return  # TODO: error handling here

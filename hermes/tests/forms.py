@@ -55,3 +55,19 @@ class YTestForm(forms.ModelForm):
             "y_test_ra_front",
             "y_test_ra_back",
         ]
+
+
+class TripleJumpForm(forms.ModelForm):
+    class Meta:
+        model = TestResult
+        fields = [
+            "triple_jump_distance_1",
+            "triple_jump_distance_2",
+            "triple_jump_distance_3",
+        ]
+
+
+class BeepTestForm(forms.ModelForm):
+    class Meta:
+        model = TestResult
+        fields = ["beep_test_level", "beep_test_laps", "max_hr"]

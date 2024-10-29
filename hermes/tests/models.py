@@ -24,7 +24,6 @@ class Profile(models.Model):
 class TestResult(models.Model):
 
     ladder_score = models.IntegerField()
-
     ladder_time_1 = models.FloatField()
     ladder_time_2 = models.FloatField()
 

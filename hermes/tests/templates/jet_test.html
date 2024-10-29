@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jet Test</title>
+</head>
+<body>
+    <h2>Jet Test</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <label for="profile_id">Select Profile:</label>
+        <select name="profile_id" id="profile_id">
+            {% for profile in profiles %}
+                <option value="{{ profile.id }}">{{ profile.person_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
