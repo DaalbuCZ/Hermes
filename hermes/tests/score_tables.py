@@ -298,13 +298,16 @@ def calculate_score(age, sex, test, *args):
         return  # TODO: add exception handling here
 
     if test == "ladder" or test == "brace" or test == "hexagon":
-        time_best = min(args[0], args[1])
+        if args[0] == args[1]:
+            time_best = args[0]
+        else:
+            time_best = min(args[0], args[1])
 
         for i, score in enumerate(age_scores):
             if time_best >= score:
                 return i
         # If score is lower than the lowest score in the table
-        return len(age_scores) + 1
+        return len(age_scores)
 
     elif test == "medicimbal" or test == "triple_jump":
         distance_best = max(args[0], args[1], args[2])
@@ -327,7 +330,7 @@ def calculate_score(age, sex, test, *args):
     elif test == "y_test":
         height = args[0]
         sum_reach = 0
-        for i in range(1, 13):
+        for i in range(1, 12):
             sum_reach += args[i]
 
         index = sum_reach / height / 12
@@ -344,6 +347,14 @@ def calculate_score(age, sex, test, *args):
 
 # score = calculate_score(12, "M", "y_test", 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 # print(score)
+
+
+def calculate_y_test_index(height, *args):
+    sum_reach = 0
+    for i in range(1, 12):
+        sum_reach += args[i]
+
+    return sum_reach / height / 12
 
 
 def calculate_beep_test_total_laps(level, laps):
