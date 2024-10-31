@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Hexagon Test</title>
-</head>
-<body>
+  </head>
+  <body>
     <h2>Hexagon Test</h2>
     <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <label for="profile_id">Select Profile:</label>
-        <select name="profile_id" id="profile_id">
-            {% for profile in profiles %}
-                <option value="{{ profile.id }}">{{ profile.person_name }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Submit</button>
+      {% csrf_token %} {{ form.as_p }}
+      <label for="profile_id">Select Profile:</label>
+      <select name="profile_id" id="profile_id">
+        {% for profile in profiles %}
+        <option value="{{ profile.id }}">
+          {{ profile.name }} {{ profile.surname}}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit">Submit</button>
     </form>
-</body>
+  </body>
 </html>

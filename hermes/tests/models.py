@@ -2,23 +2,24 @@ from django.db import models
 
 
 class Profile(models.Model):
-    person_name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
     age = models.IntegerField()
     weight = models.IntegerField()
     height = models.IntegerField()
-    SEX_CHOICES = [
+    GENDER_CHOICES = [
         ("M", "Muž"),
         ("F", "Žena"),
         ("U", "Nezadáno"),
     ]
-    sex = models.CharField(
+    gender = models.CharField(
         max_length=1,
-        choices=SEX_CHOICES,
+        choices=GENDER_CHOICES,
         default="U",
     )
 
     def __str__(self):
-        return self.person_name
+        return f"{self.name} {self.surname}"
 
 
 class TestResult(models.Model):
@@ -71,6 +72,9 @@ class TestResult(models.Model):
     beep_test_laps = models.IntegerField(null=True, blank=True)
     beep_test_total_laps = models.IntegerField(null=True, blank=True)
     max_hr = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.profile.name} {self.profile.surname} - {self._meta.model_name}"
 
 
 def save(self, *args, **kwargs):

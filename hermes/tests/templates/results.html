@@ -1,149 +1,165 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Test Results</title>
     <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid black;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Test Results</h1>
-
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    
+    <button onclick="location.href='{% url 'recalculate_scores' %}'">Recalculate All Scores</button> 
+    <!-- TODO: Remove this button or for admins only -->
+    
     <table>
-        <thead>
-            <tr>
-                <th>Person Name</th>
-                <th>Age</th>
-                <th>Weight</th>
-                <th>Height</th>
-                <th>Sex</th>
+      <thead>
+        <tr>
+          <th>Name & Surnames</th>
+          <th>Gender</th>
+          <th>Weight</th>
+          <th>Height</th>
+          <th>Age</th>
 
-                <th>Ladder Score</th>
-                <th>Ladder Time 1</th>
-                <th>Ladder Time 2</th>
+          <th>Ladder Score</th>
+          <th>Ladder Time 1</th>
+          <th>Ladder Time 2</th>
 
-                <th>Hexagon Score</th>
-                <th>Hexagon Time CW</th>
-                <th>Hexagon Time CCW</th>
+          <th>Hexagon Score</th>
+          <th>Hexagon Time CW</th>
+          <th>Hexagon Time CCW</th>
 
-                <th>Y Balance Test Score</th>
-                <th>Y Balance Test Index</th>
-                <th>Y Left Leg Front</th>
-                <th>Y Left Leg Left</th>
-                <th>Y Left Leg Right</th>
-                <th>Y Right Leg Front</th>
-                <th>Y Right Leg Right</th>
-                <th>Y Right Leg Left</th>
-                <th>Y Left Arm Left</th>
-                <th>Y Left Arm Front</th>
-                <th>Y Left Arm Back</th>
-                <th>Y Right Arm Right</th>
-                <th>Y Right Arm Front</th>
-                <th>Y Right Arm Back</th>
+          <th>Y Balance Test Score</th>
+          <th>Y Balance Test Index</th>
+          <th>Y Left Leg Front</th>
+          <th>Y Left Leg Left</th>
+          <th>Y Left Leg Right</th>
+          <th>Y Right Leg Front</th>
+          <th>Y Right Leg Right</th>
+          <th>Y Right Leg Left</th>
+          <th>Y Left Arm Left</th>
+          <th>Y Left Arm Front</th>
+          <th>Y Left Arm Back</th>
+          <th>Y Right Arm Right</th>
+          <th>Y Right Arm Front</th>
+          <th>Y Right Arm Back</th>
 
-                <th>Brace Score</th>
-                <th>Brace Time 1</th>
-                <th>Brace Time 2</th>
+          <th>Brace Score</th>
+          <th>Brace Time 1</th>
+          <th>Brace Time 2</th>
 
-                <th>Medicimbal Score</th>
-                <th>Medicimbal Throw 1</th>
-                <th>Medicimbal Throw 2</th>
-                <th>Medicimbal Throw 3</th>
+          <th>Medicimbal Score</th>
+          <th>Medicimbal Throw 1</th>
+          <th>Medicimbal Throw 2</th>
+          <th>Medicimbal Throw 3</th>
 
-                <th>Jet Score</th>
-                <th>Jet Laps</th>
-                <th>Jet Sides</th>
-                <th>Jet Distance</th>
+          <th>Jet Score</th>
+          <th>Jet Laps</th>
+          <th>Jet Sides</th>
+          <th>Jet Distance</th>
 
-                <th>Triple Jump Score</th>
-                <th>Triple Jump Distance 1</th>
-                <th>Triple Jump Distance 2</th>
-                <th>Triple Jump Distance 3</th>
+          <th>Triple Jump Score</th>
+          <th>Triple Jump Distance 1</th>
+          <th>Triple Jump Distance 2</th>
+          <th>Triple Jump Distance 3</th>
 
-                <th>Beep Test Score</th>
-                <th>Beep Test Level</th>
-                <th>Beep Test Laps</th>
-                <th>Beep Test Total Laps</th>
+          <th>Beep Test Score</th>
+          <th>Beep Test Level</th>
+          <th>Beep Test Laps</th>
+          <th>Beep Test Total Laps</th>
 
-                <th>Max HR</th>
-                <th>Year</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for result in results %}
-                <tr>
-                    <td>{{ result.profile.person_name }}</td>
-                    <td>{{ result.profile.sex }}</td>
-                    <td>{{ result.profile.weight }}</td>
-                    <td>{{ result.profile.height }}</td>
-                    <td>{{ result.profile.age }}</td>
-
-                    <td>{{ result.ladder_score }}</td>
-                    <td>{{ result.ladder_time_1 }}</td>
-                    <td>{{ result.ladder_time_2 }}</td>
-                    
-                    <td>{{ result.hexagon_score }}</td>
-                    <td>{{ result.hexagon_time_cw }}</td>
-                    <td>{{ result.hexagon_time_ccw }}</td>
-                    
-                    <td>{{ result.y_test_score }}</td>
-                    <td>{{ result.y_test_index }}</td>
-                    <td>{{ result.y_test_ll_front }}</td>
-                    <td>{{ result.y_test_ll_left }}</td>
-                    <td>{{ result.y_test_ll_right }}</td>
-                    <td>{{ result.y_test_rl_front }}</td>
-                    <td>{{ result.y_test_rl_right }}</td>
-                    <td>{{ result.y_test_rl_left }}</td>
-                    <td>{{ result.y_test_la_left }}</td>
-                    <td>{{ result.y_test_la_front }}</td>
-                    <td>{{ result.y_test_la_back }}</td>
-                    <td>{{ result.y_test_ra_right }}</td>
-                    <td>{{ result.y_test_ra_front }}</td>
-                    <td>{{ result.y_test_ra_back }}</td>
-                    
-                    <td>{{ result.brace_score }}</td>
-                    <td>{{ result.brace_time_1 }}</td>
-                    <td>{{ result.brace_time_2 }}</td>
-                    
-                    <td>{{ result.medicimbal_score }}</td>
-                    <td>{{ result.medicimbal_throw_1 }}</td>
-                    <td>{{ result.medicimbal_throw_2 }}</td>
-                    <td>{{ result.medicimbal_throw_3 }}</td>
-                    
-                    <td>{{ result.jet_score }}</td>
-                    <td>{{ result.jet_laps }}</td>
-                    <td>{{ result.jet_sides }}</td>
-                    <td>{{ result.jet_distance }}</td>
-                    
-                    <td>{{ result.triple_jump_score }}</td>
-                    <td>{{ result.triple_jump_distance_1 }}</td>
-                    <td>{{ result.triple_jump_distance_2 }}</td>
-                    <td>{{ result.triple_jump_distance_3 }}</td>
-                    
-                    <td>{{ result.beep_test_score }}</td>
-                    <td>{{ result.beep_test_level }}</td>
-                    <td>{{ result.beep_test_laps }}</td>
-                    <td>{{ result.beep_test_total_laps }}</td>
-
-                    <td>{{ result.max_hr }}</td>
-                    <td>{{ result.year }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="10">No results found.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+          <th>Max HR</th>
+          <th>Year</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in results %}
+        <tr>
+          <td>{{ item.profile.name }} {{ item.profile.surname }}</td>
+          <td>{{ item.profile.gender }}</td>
+          <td>{{ item.profile.weight }}</td>
+          <td>{{ item.profile.height }}</td>
+          <td>{{ item.profile.age }}</td>
+          
+          {% if item.test_result %}
+            <td>{{ item.test_result.ladder_score }}</td>
+            <td>{{ item.test_result.ladder_time_1 }}</td>
+            <td>{{ item.test_result.ladder_time_2 }}</td>
+         
+            <td>{{ item.test_result.hexagon_score }}</td>
+            <td>{{ item.test_result.hexagon_time_cw }}</td>
+            <td>{{ item.test_result.hexagon_time_ccw }}</td>
+         
+            <td>{{ item.test_result.y_test_score }}</td>
+            <td>{{ item.test_result.y_test_index }}</td>
+            <td>{{ item.test_result.y_test_ll_front }}</td>
+            <td>{{ item.test_result.y_test_ll_left }}</td>
+            <td>{{ item.test_result.y_test_ll_right }}</td>
+            <td>{{ item.test_result.y_test_rl_front }}</td>
+            <td>{{ item.test_result.y_test_rl_right }}</td>
+            <td>{{ item.test_result.y_test_rl_left }}</td>
+            <td>{{ item.test_result.y_test_la_left }}</td>
+            <td>{{ item.test_result.y_test_la_front }}</td>
+            <td>{{ item.test_result.y_test_la_back }}</td>
+            <td>{{ item.test_result.y_test_ra_right }}</td>
+            <td>{{ item.test_result.y_test_ra_front }}</td>
+            <td>{{ item.test_result.y_test_ra_back }}</td>
+         
+            <td>{{ item.test_result.brace_score }}</td>
+            <td>{{ item.test_result.brace_time_1 }}</td>
+            <td>{{ item.test_result.brace_time_2 }}</td>
+         
+            <td>{{ item.test_result.medicimbal_score }}</td>
+            <td>{{ item.test_result.medicimbal_throw_1 }}</td>
+            <td>{{ item.test_result.medicimbal_throw_2 }}</td>
+            <td>{{ item.test_result.medicimbal_throw_3 }}</td>
+         
+            <td>{{ item.test_result.jet_score }}</td>
+            <td>{{ item.test_result.jet_laps }}</td>
+            <td>{{ item.test_result.jet_sides }}</td>
+            <td>{{ item.test_result.jet_distance }}</td>
+         
+            <td>{{ item.test_result.triple_jump_score }}</td>
+            <td>{{ item.test_result.triple_jump_distance_1 }}</td>
+            <td>{{ item.test_result.triple_jump_distance_2 }}</td>
+            <td>{{ item.test_result.triple_jump_distance_3 }}</td>
+         
+            <td>{{ item.test_result.beep_test_score }}</td>
+            <td>{{ item.test_result.beep_test_level }}</td>
+            <td>{{ item.test_result.beep_test_laps }}</td>
+            <td>{{ item.test_result.beep_test_total_laps }}</td>
+         
+            <td>{{ item.test_result.max_hr }}</td>
+            <td>{{ item.test_result.year }}</td>
+          {% else %}
+              <td colspan="41">No test results available</td>
+          {% endif %}
+          </tr>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="10">No results found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
-</body>
+  </body>
 </html>

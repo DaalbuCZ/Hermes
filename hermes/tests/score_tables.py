@@ -1,3 +1,6 @@
+import math
+
+
 ladder_score_table_m = {
     # fmt: off
     10: [3.70, 3.65, 3.60, 3.55, 3.50, 3.45, 3.40, 3.35, 3.30, 3.25, 3.20, 3.15, 3.10, 3.05, 3.00, 2.95, 2.90, 2.85, 2.80, 2.75],
@@ -255,7 +258,7 @@ beep_test_score_table_f = {
 }
 
 
-def calculate_score(age, sex, test, *args):
+def calculate_score(age, gender, test, *args):
     if age < 10:
         age = 10
     elif age > 20:
@@ -290,9 +293,9 @@ def calculate_score(age, sex, test, *args):
             return  # TODO: add exception handling here
 
     # Get the scores for the given age and test
-    if sex == "M":
+    if gender == "M":
         age_scores = test_score_table_m.get(age)
-    elif sex == "F":
+    elif gender == "F":
         age_scores = test_score_table_f.get(age)
     else:
         return  # TODO: add exception handling here
@@ -330,15 +333,15 @@ def calculate_score(age, sex, test, *args):
     elif test == "y_test":
         height = args[0]
         sum_reach = 0
-        for i in range(1, 12):
+        for i in range(1, 13):
             sum_reach += args[i]
 
-        index = sum_reach / height / 12
-        for i, score in enumerate(age_scores):
-            if index < score:
-                return i
+        index = math.floor(sum_reach / height / 12 * 100) / 100.0
+        for i, score in enumerate(reversed(age_scores)):
+            if index > score:
+                return len(age_scores) - i - 1
             elif index == score:
-                return i + 1
+                return len(age_scores) - i
         # If score is higher than the highest score in the table
         return len(age_scores)
 
@@ -351,10 +354,10 @@ def calculate_score(age, sex, test, *args):
 
 def calculate_y_test_index(height, *args):
     sum_reach = 0
-    for i in range(1, 12):
+    for i in range(0, 12):
         sum_reach += args[i]
 
-    return sum_reach / height / 12
+    return math.floor(sum_reach / height / 12 * 100) / 100.0
 
 
 def calculate_beep_test_total_laps(level, laps):
