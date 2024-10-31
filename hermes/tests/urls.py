@@ -19,5 +19,9 @@ urlpatterns = [
         views.adjudicator_dashboard,
         name="adjudicator_dashboard",
     ),
-    path("recalculate_scores/", views.recalculate_scores, name="recalculate_scores"),
+    path(
+        "recalculate_scores/",
+        views.recalculate_scores_view,
+        name="recalculate_scores",
+    ),
 ]

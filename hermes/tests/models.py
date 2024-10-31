@@ -18,6 +18,77 @@ class Profile(models.Model):
         default="U",
     )
 
+    def get_ladder_times(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "time_1": getattr(test_result, "ladder_time_1", None),
+            "time_2": getattr(test_result, "ladder_time_2", None),
+        }
+
+    def get_brace_times(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "time_1": getattr(test_result, "brace_time_1", None),
+            "time_2": getattr(test_result, "brace_time_2", None),
+        }
+
+    def get_hexagon_times(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "time_cw": getattr(test_result, "hexagon_time_cw", None),
+            "time_ccw": getattr(test_result, "hexagon_time_ccw", None),
+        }
+
+    def get_medicimbal_throws(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "throw_1": getattr(test_result, "medicimbal_throw_1", None),
+            "throw_2": getattr(test_result, "medicimbal_throw_2", None),
+            "throw_3": getattr(test_result, "medicimbal_throw_3", None),
+        }
+
+    def get_jet_results(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "laps": getattr(test_result, "jet_laps", None),
+            "sides": getattr(test_result, "jet_sides", None),
+            "distance": getattr(test_result, "jet_distance", None),
+        }
+
+    def get_y_test_results(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "ll_front": getattr(test_result, "y_test_ll_front", None),
+            "ll_left": getattr(test_result, "y_test_ll_left", None),
+            "ll_right": getattr(test_result, "y_test_ll_right", None),
+            "rl_front": getattr(test_result, "y_test_rl_front", None),
+            "rl_right": getattr(test_result, "y_test_rl_right", None),
+            "rl_left": getattr(test_result, "y_test_rl_left", None),
+            "la_left": getattr(test_result, "y_test_la_left", None),
+            "la_front": getattr(test_result, "y_test_la_front", None),
+            "la_back": getattr(test_result, "y_test_la_back", None),
+            "ra_right": getattr(test_result, "y_test_ra_right", None),
+            "ra_front": getattr(test_result, "y_test_ra_front", None),
+            "ra_back": getattr(test_result, "y_test_ra_back", None),
+        }
+
+    def get_triple_jump_results(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "distance_1": getattr(test_result, "triple_jump_distance_1", None),
+            "distance_2": getattr(test_result, "triple_jump_distance_2", None),
+            "distance_3": getattr(test_result, "triple_jump_distance_3", None),
+        }
+
+    def get_beep_test_results(self):
+        test_result = self.get_latest_test_result()
+        return {
+            "level": getattr(test_result, "beep_test_level", None),
+            "laps": getattr(test_result, "beep_test_laps", None),
+            "total_laps": getattr(test_result, "beep_test_total_laps", None),
+            "max_hr": getattr(test_result, "max_hr", None),
+        }
+
     def __str__(self):
         return f"{self.name} {self.surname}"
 

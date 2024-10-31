@@ -301,7 +301,11 @@ def calculate_score(age, gender, test, *args):
         return  # TODO: add exception handling here
 
     if test == "ladder" or test == "brace" or test == "hexagon":
-        if args[0] == args[1]:
+        if args[0] is None and args[1] is None:
+            return 0
+        elif args[0] is None:
+            time_best = args[1]
+        elif args[1] is None:
             time_best = args[0]
         else:
             time_best = min(args[0], args[1])
@@ -313,7 +317,22 @@ def calculate_score(age, gender, test, *args):
         return len(age_scores)
 
     elif test == "medicimbal" or test == "triple_jump":
-        distance_best = max(args[0], args[1], args[2])
+        if args[0] is None and args[1] is None and args[2] is None:
+            return 0
+        elif args[0] is None and args[1] is None:
+            distance_best = args[2]
+        elif args[0] is None and args[2] is None:
+            distance_best = args[1]
+        elif args[1] is None and args[2] is None:
+            distance_best = args[0]
+        elif args[0] is None:
+            distance_best = max(args[1], args[2])
+        elif args[1] is None:
+            distance_best = max(args[0], args[2])
+        elif args[2] is None:
+            distance_best = max(args[0], args[1])
+        else:
+            distance_best = max(args[0], args[1], args[2])
 
         for i, score in enumerate(age_scores):
             if distance_best <= score:

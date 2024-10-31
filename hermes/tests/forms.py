@@ -5,7 +5,7 @@ from .models import TestResult, Profile
 class CustomProfileCreationForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["name", "surname", "age", "weight", "height", "gender"]
+        fields = ["name", "surname", "age", "height", "weight", "gender"]
 
 
 class LadderForm(forms.ModelForm):

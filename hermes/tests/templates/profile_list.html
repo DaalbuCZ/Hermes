@@ -3,8 +3,9 @@
 <ul>
   {% for profile in profiles %}
   <li>
-    {{ profile.name }} {{ profile.surname}} (Age: {{ profile.age }}, Weight: {{
-    profile.weight }}, Height: {{ profile.height }})
+    {{ profile.surname}} {{ profile.name }} (Gender: {{ profile.gender }}, Age:
+    {{ profile.age }}, Height: {{ profile.height }}, Weight: {{ profile.weight}}
+    )
   </li>
   {% endfor %}
 </ul>
