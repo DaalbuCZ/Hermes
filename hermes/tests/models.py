@@ -10,12 +10,11 @@ class Profile(models.Model):
     GENDER_CHOICES = [
         ("M", "Muž"),
         ("F", "Žena"),
-        ("U", "Nezadáno"),
     ]
     gender = models.CharField(
         max_length=1,
         choices=GENDER_CHOICES,
-        default="U",
+        default="M",
     )
 
     def get_ladder_times(self):
@@ -91,6 +90,10 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.name} {self.surname}"
+
+    @property
+    def full_name(self):
+        return f"{self.surname} {self.name}"
 
 
 class TestResult(models.Model):

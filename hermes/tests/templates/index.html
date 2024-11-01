@@ -1,44 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Index Page</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 1em 0;
-        }
-        main {
-            padding: 20px;
-        }
-        footer {
-            background-color: #f1f1f1;
-            text-align: center;
-            padding: 10px 0;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Welcome to My Website</h1>
-    </header>
-    <main>
-        <h2>About Us</h2>
-        <p>This is a simple index page. You can add more content here to describe your website.</p>
-    </main>
-    <footer>
-        <p>&copy; 2024 My Website</p>
-    </footer>
-</body>
+<html>
+  <head>
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <h2>Welcome</h2>
+    <ul>
+      <li><a href="{% url 'adjudicator_dashboard' %}">Dashboard</a></li>
+    </ul>
+  </body>
 </html>

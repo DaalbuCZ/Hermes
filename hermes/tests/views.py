@@ -53,11 +53,6 @@ def add_profile(request):
         form = CustomProfileCreationForm(request.POST)
         if form.is_valid():
             profile = form.save(commit=False)  # Don't save yet
-            if profile.gender == "U":
-                return HttpResponse(
-                    "Select either male or female",
-                    status=400,
-                )
             profile.save()  # Explicitly save the profile
             return redirect("profile_list")
 
@@ -103,7 +98,11 @@ def ladder_test_view(request):
     else:
         form = LadderForm()
     profiles = Profile.objects.all()
-    return render(request, "ladder_test.html", {"form": form, "profiles": profiles})
+    return render(
+        request,
+        "ladder_test.html",
+        {"form": form, "profiles": profiles},
+    )
 
 
 def brace_test_view(request):

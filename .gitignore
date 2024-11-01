@@ -3,3 +3,6 @@
 /hermes/tests/__pycache__
 /hermes/hermes/__pycache__
 /olympvenv
+/hermes/node_modules
+/hermes/package-lock.json
+/hermes/package.json
