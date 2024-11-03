@@ -62,6 +62,18 @@ def add_profile(request):
     return render(request, "add_profile.html", {"form": form})
 
 
+def edit_profile(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    if request.method == "POST":
+        form = CustomProfileCreationForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            return redirect("profile_list")
+    else:
+        form = CustomProfileCreationForm(instance=profile)
+    return render(request, "edit_profile.html", {"form": form})
+
+
 def profile_list(request):
     profiles = Profile.objects.all().order_by("surname")
     return render(request, "profile_list.html", {"profiles": profiles})

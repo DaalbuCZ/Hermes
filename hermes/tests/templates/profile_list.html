@@ -3,9 +3,10 @@
 <ul>
   {% for profile in profiles %}
   <li>
-    {{ profile.surname}} {{ profile.name }} (Gender: {{ profile.gender }}, Age:
-    {{ profile.age }}, Height: {{ profile.height }}, Weight: {{ profile.weight}}
-    )
+    {{ profile.surname }} {{ profile.name }} (Gender: {{ profile.gender }}, Age:
+    {{ profile.age }}, Height: {{ profile.height }},
+    Weight: {{ profile.weight }}) -
+    <a href="{% url 'edit_profile' profile.id %}">Edit</a>
   </li>
   {% endfor %}
 </ul>

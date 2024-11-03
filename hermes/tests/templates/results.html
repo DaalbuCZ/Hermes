@@ -109,15 +109,15 @@
                 <td>{{ item.profile.weight }}</td>
                 
                 {% if item.test_result %}
-                    <td>{{ item.test_result.ladder_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.ladder_score }}</td>
                     <td>{{ item.test_result.ladder_time_1 | default:"DNF" }}</td>
                     <td>{{ item.test_result.ladder_time_2 | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.hexagon_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.hexagon_score }}</td>
                     <td>{{ item.test_result.hexagon_time_cw | default:"DNF" }}</td>
                     <td>{{ item.test_result.hexagon_time_ccw | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.y_test_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.y_test_score }}</td>
                     <td>{{ item.test_result.y_test_index | default:"DNF" }}</td>
                     <td>{{ item.test_result.y_test_ll_front | default:"DNF" }}</td>
                     <td>{{ item.test_result.y_test_ll_left | default:"DNF" }}</td>
@@ -132,26 +132,26 @@
                     <td>{{ item.test_result.y_test_ra_front | default:"DNF" }}</td>
                     <td>{{ item.test_result.y_test_ra_back | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.brace_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.brace_score }}</td>
                     <td>{{ item.test_result.brace_time_1 | default:"DNF" }}</td>
                     <td>{{ item.test_result.brace_time_2 | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.medicimbal_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.medicimbal_score }}</td>
                     <td>{{ item.test_result.medicimbal_throw_1 | default:"DNF" }}</td>
                     <td>{{ item.test_result.medicimbal_throw_2 | default:"DNF" }}</td>
                     <td>{{ item.test_result.medicimbal_throw_3 | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.jet_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.jet_score }}</td>
                     <td>{{ item.test_result.jet_laps | default:"DNF" }}</td>
                     <td>{{ item.test_result.jet_sides | default:"DNF" }}</td>
                     <td>{{ item.test_result.jet_distance | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.triple_jump_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.triple_jump_score }}</td>
                     <td>{{ item.test_result.triple_jump_distance_1 | default:"DNF" }}</td>
                     <td>{{ item.test_result.triple_jump_distance_2 | default:"DNF" }}</td>
                     <td>{{ item.test_result.triple_jump_distance_3 | default:"DNF" }}</td>
                     
-                    <td>{{ item.test_result.beep_test_score | default:"DNF" }}</td>
+                    <td>{{ item.test_result.beep_test_score }}</td>
                     <td>{{ item.test_result.beep_test_level | default:"DNF" }}</td>
                     <td>{{ item.test_result.beep_test_laps | default:"DNF" }}</td>
                     <td>{{ item.test_result.beep_test_total_laps | default:"DNF" }}</td>
