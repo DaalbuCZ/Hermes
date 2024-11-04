@@ -1,21 +1,55 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Triple Jump Test</title>
-  </head>
-  <body>
-    <h2>Triple Jump Test</h2>
-    <form method="POST">
-      {% csrf_token %} {{ form.as_p }}
-      <label for="profile_id">Select Profile:</label>
-      <select name="profile_id" id="profile_id">
-        {% for profile in profiles %}
-        <option value="{{ profile.id }}">
-          {{ profile.name }} {{ profile.surname}}
-        </option>
-        {% endfor %}
-      </select>
-      <button type="submit">Submit</button>
-    </form>
-  </body>
+
+<head>
+  <title>Triple Jump Test</title>
+  <!-- Add custom CSS for styling -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+
+<body>
+  <h2>Triple Jump Test</h2>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <label for="profile_search">Select Profile:</label>
+    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
+    <ul id="profile_list" class="dropdown-content">
+      {% for profile in profiles %}
+      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+      {% endfor %}
+    </ul>
+    <input type="hidden" name="profile_id" id="profile_id">
+    <button type="submit">Submit</button>
+  </form>
+  <!-- Include jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#profile_search').on('keyup focus', function () {
+        var value = $(this).val().toLowerCase();
+        $('#profile_list li').filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+        $('#profile_list').show();
+      });
+
+      $('#profile_list li').on('click', function () {
+        var selectedText = $(this).text();
+        var selectedValue = $(this).data('value');
+        $('#profile_search').val(selectedText);
+        $('#profile_id').val(selectedValue);
+        $('#profile_list').hide();
+      });
+
+      $(document).on('click', function (e) {
+        if (!$(e.target).closest('#profile_search, #profile_list').length) {
+          $('#profile_list').hide();
+        }
+      });
+    });
+  </script>
+</body>
+
 </html>

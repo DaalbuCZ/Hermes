@@ -25,4 +25,5 @@ urlpatterns = [
         name="recalculate_scores",
     ),
     path("edit_profile/<int:profile_id>/", views.edit_profile, name="edit_profile"),
+    path("get_profile_data/", views.get_profile_data, name="get_profile_data"),
 ]

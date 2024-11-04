@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Dashboard</title>
-  </head>
-  <body>
-    <h2>Welcome</h2>
-    <ul>
-      <li><a href="{% url 'adjudicator_dashboard' %}">Dashboard</a></li>
-    </ul>
-  </body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Home - HERMES{% endblock %}
+{% block content %}
+<div class="jumbotron text-center">
+  <h1 class="display-4">Welcome to HERMES</h1>
+  <p class="lead">Your comprehensive platform for athletic test management.</p>
+  <a class="btn btn-primary btn-lg" href="{% url 'adjudicator_dashboard' %}" role="button">Go to Dashboard</a>
+</div>
+{% endblock %}

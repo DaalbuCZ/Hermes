@@ -1,21 +1,49 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Beep Test</title>
-  </head>
-  <body>
-    <h2>Beep Test</h2>
-    <form method="POST">
-      {% csrf_token %} {{ form.as_p }}
-      <label for="profile_id">Select Profile:</label>
-      <select name="profile_id" id="profile_id">
-        {% for profile in profiles %}
-        <option value="{{ profile.id }}">
-          {{ profile.name }} {{ profile.surname}}
-        </option>
-        {% endfor %}
-      </select>
-      <button type="submit">Submit</button>
-    </form>
-  </body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Beep Test - HERMES{% endblock %}
+{% block content %}
+<h2>Beep Test</h2>
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="form-group">
+    <label for="profile_search">Select Profile:</label>
+    <input type="text" id="profile_search" class="form-control" placeholder="Search profiles..." autocomplete="off">
+    <div id="profile_list" class="list-group">
+      {% for profile in profiles %}
+      <a href="#" class="list-group-item list-group-item-action" data-value="{{ profile.id }}">{{ profile.surname }} {{
+        profile.name }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="profile_id" id="profile_id">
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+  $(document).ready(function () {
+    $('#profile_search').on('keyup focus', function () {
+      var value = $(this).val().toLowerCase();
+      $('#profile_list a').filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+      });
+      $('#profile_list').show();
+    });
+
+    $('#profile_list a').on('click', function (e) {
+      e.preventDefault();
+      var selectedText = $(this).text();
+      var selectedValue = $(this).data('value');
+      $('#profile_search').val(selectedText);
+      $('#profile_id').val(selectedValue);
+      $('#profile_list').hide();
+    });
+
+    $(document).on('click', function (e) {
+      if (!$(e.target).closest('#profile_search, #profile_list').length) {
+        $('#profile_list').hide();
+      }
+    });
+  });
+</script>
+{% endblock %}

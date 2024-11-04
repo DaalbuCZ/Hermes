@@ -18,6 +18,7 @@ from .forms import (
     TripleJumpForm,
 )
 from .recalculate_scores import recalculate_scores
+from django.http import JsonResponse
 
 
 def test_results(request):
@@ -477,3 +478,15 @@ def adjudicator_dashboard(request):
 
 def recalculate_scores_view(request):
     return recalculate_scores(request)
+
+
+def get_profile_data(request):
+    profile_id = request.GET.get("profile_id")
+    profile = get_object_or_404(Profile, id=profile_id)
+    data = {
+        "age": profile.age,
+        "height": profile.height,
+        "weight": profile.weight,
+        # Include other fields as needed
+    }
+    return JsonResponse(data)
