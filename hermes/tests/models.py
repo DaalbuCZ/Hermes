@@ -89,7 +89,7 @@ class Profile(models.Model):
         }
 
     def __str__(self):
-        return f"{self.name} {self.surname}"
+        return f"{self.surname} {self.name}"
 
     @property
     def full_name(self):
@@ -99,15 +99,15 @@ class Profile(models.Model):
 class TestResult(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
 
-    ladder_score = models.IntegerField(null=True, blank=True)
+    ladder_score = models.IntegerField(default=0)
     ladder_time_1 = models.FloatField(null=True, blank=True)
     ladder_time_2 = models.FloatField(null=True, blank=True)
 
-    hexagon_score = models.IntegerField(null=True, blank=True)
+    hexagon_score = models.IntegerField(default=0)
     hexagon_time_cw = models.FloatField(null=True, blank=True)
     hexagon_time_ccw = models.FloatField(null=True, blank=True)
 
-    y_test_score = models.IntegerField(null=True, blank=True)
+    y_test_score = models.IntegerField(default=0)
     y_test_index = models.FloatField(null=True, blank=True)
     y_test_ll_front = models.FloatField(null=True, blank=True)
     y_test_ll_left = models.FloatField(null=True, blank=True)
@@ -122,33 +122,33 @@ class TestResult(models.Model):
     y_test_ra_front = models.FloatField(null=True, blank=True)
     y_test_ra_back = models.FloatField(null=True, blank=True)
 
-    brace_score = models.IntegerField(null=True, blank=True)
+    brace_score = models.IntegerField(default=0)
     brace_time_1 = models.FloatField(null=True, blank=True)
     brace_time_2 = models.FloatField(null=True, blank=True)
 
-    medicimbal_score = models.IntegerField(null=True, blank=True)
+    medicimbal_score = models.IntegerField(default=0)
     medicimbal_throw_1 = models.FloatField(null=True, blank=True)
     medicimbal_throw_2 = models.FloatField(null=True, blank=True)
     medicimbal_throw_3 = models.FloatField(null=True, blank=True)
 
-    jet_score = models.IntegerField(null=True, blank=True)
+    jet_score = models.IntegerField(default=0)
     jet_laps = models.IntegerField(null=True, blank=True)
     jet_sides = models.IntegerField(null=True, blank=True)
     jet_distance = models.IntegerField(null=True, blank=True)
 
-    triple_jump_score = models.IntegerField(null=True, blank=True)
+    triple_jump_score = models.IntegerField(default=0)
     triple_jump_distance_1 = models.FloatField(null=True, blank=True)
     triple_jump_distance_2 = models.FloatField(null=True, blank=True)
     triple_jump_distance_3 = models.FloatField(null=True, blank=True)
 
-    beep_test_score = models.IntegerField(null=True, blank=True)
+    beep_test_score = models.IntegerField(default=0)
     beep_test_level = models.IntegerField(null=True, blank=True)
     beep_test_laps = models.IntegerField(null=True, blank=True)
     beep_test_total_laps = models.IntegerField(null=True, blank=True)
     max_hr = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.profile.name} {self.profile.surname} - {self._meta.model_name}"
+        return f"{self.profile.surname} {self.profile.name} - {self._meta.model_name}"
 
 
 def save(self, *args, **kwargs):
