@@ -6,3 +6,5 @@
 /hermes/node_modules
 /hermes/package-lock.json
 /hermes/package.json
+/hermes/dbmanager/__pycache__
+/hermes/dbmanager/migrations

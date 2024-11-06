@@ -21,6 +21,10 @@ from .recalculate_scores import recalculate_scores
 from django.http import JsonResponse
 
 
+def get_selected_db(request):
+    return request.session.get("selected_db", "default")
+
+
 def test_results(request):
     profiles = Profile.objects.all().order_by("surname")
 
@@ -87,8 +91,9 @@ def ladder_test_view(request):
             test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            test_result, created = TestResult.objects.update_or_create(
+            test_result, created = TestResult.objects.using(
+                get_selected_db(request)
+            ).update_or_create(
                 profile=profile,
                 defaults={
                     "ladder_time_1": test_result.ladder_time_1,
@@ -104,7 +109,7 @@ def ladder_test_view(request):
 
             score = calculate_score(age, gender, "ladder", time_1, time_2)
             test_result.ladder_score = score
-            test_result.save()
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors

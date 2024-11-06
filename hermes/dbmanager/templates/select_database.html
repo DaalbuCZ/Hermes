@@ -1,0 +1,10 @@
+<form method="post">
+    {% csrf_token %}
+    <label for="db_name">Select Database:</label>
+    <select name="db_name" id="db_name">
+        {% for db in databases %}
+        <option value="{{ db.name }}">{{ db.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Select</button>
+</form>

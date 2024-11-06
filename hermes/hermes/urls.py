@@ -22,5 +22,6 @@ from tests import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("tests/", include("tests.urls")),
-    path("", views.index, name="index"),  # Add this line
+    path("", views.index, name="index"),
+    path("dbmanager/", include("dbmanager.urls")),
 ]
