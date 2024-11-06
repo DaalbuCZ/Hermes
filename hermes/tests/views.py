@@ -88,27 +88,34 @@ def ladder_test_view(request):
     if request.method == "POST":
         form = LadderForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-            test_result, created = TestResult.objects.using(
-                get_selected_db(request)
-            ).update_or_create(
-                profile=profile,
-                defaults={
-                    "ladder_time_1": test_result.ladder_time_1,
-                    "ladder_time_2": test_result.ladder_time_2,
-                },
-            )
+
+            # Retrieve the existing TestResult object if it exists
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = TestResult(profile=profile)
+
+            # Update the fields only if new values are provided
+            ladder_time_1 = request.POST.get("ladder_time_1")
+            ladder_time_2 = request.POST.get("ladder_time_2")
+
+            if ladder_time_1:
+                test_result.ladder_time_1 = float(ladder_time_1)
+            if ladder_time_2:
+                test_result.ladder_time_2 = float(ladder_time_2)
 
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
             time_1 = test_result.ladder_time_1
             time_2 = test_result.ladder_time_2
-
             score = calculate_score(age, gender, "ladder", time_1, time_2)
             test_result.ladder_score = score
+
             test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
@@ -127,96 +134,120 @@ def brace_test_view(request):
     if request.method == "POST":
         form = BraceForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
 
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "brace_time_1": float(request.POST.get("brace_time_1")),
-                    "brace_time_2": float(request.POST.get("brace_time_2")),
-                },
-            )
+            # Retrieve the existing TestResult object if it exists
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = TestResult(profile=profile)
+
+            # Update the fields only if new values are provided
+            brace_time_1 = request.POST.get("brace_time_1")
+            brace_time_2 = request.POST.get("brace_time_2")
+
+            if brace_time_1:
+                test_result.brace_time_1 = float(brace_time_1)
+            if brace_time_2:
+                test_result.brace_time_2 = float(brace_time_2)
 
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
             time_1 = test_result.brace_time_1
             time_2 = test_result.brace_time_2
-
-            if time_1 is None or time_2 is None:
-                return HttpResponse(
-                    "Error: Both brace_time_1 and brace_time_2 must be provided",
-                    status=400,
-                )
-
             score = calculate_score(age, gender, "brace", time_1, time_2)
             test_result.brace_score = score
-            test_result.save()
+
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
+        else:
+            print(form.errors)  # Debug print form errors
     else:
         form = BraceForm()
     profiles = Profile.objects.all()
-    return render(request, "brace_test.html", {"form": form, "profiles": profiles})
+    return render(
+        request,
+        "brace_test.html",
+        {"form": form, "profiles": profiles},
+    )
 
 
 def hexagon_test_view(request):
     if request.method == "POST":
         form = HexagonForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
 
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "hexagon_time_cw": float(request.POST.get("hexagon_time_cw")),
-                    "hexagon_time_ccw": float(request.POST.get("hexagon_time_ccw")),
-                },
-            )
+            # Retrieve the existing TestResult object if it exists
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = TestResult(profile=profile)
+
+            # Update the fields only if new values are provided
+            hexagon_time_cw = request.POST.get("hexagon_time_cw")
+            hexagon_time_ccw = request.POST.get("hexagon_time_ccw")
+
+            if hexagon_time_cw:
+                test_result.hexagon_time_cw = float(hexagon_time_cw)
+            if hexagon_time_ccw:
+                test_result.hexagon_time_ccw = float(hexagon_time_ccw)
 
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
             time_cw = test_result.hexagon_time_cw
             time_ccw = test_result.hexagon_time_ccw
-
-            if time_cw is None or time_ccw is None:
-                return HttpResponse(
-                    "Error: Both hexagon_time_cw and hexagon_time_ccw must be provided",
-                    status=400,
-                )
-
             score = calculate_score(age, gender, "hexagon", time_cw, time_ccw)
             test_result.hexagon_score = score
-            test_result.save()
+
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)
+            print(form.errors)  # Debug print form errors
     else:
         form = HexagonForm()
     profiles = Profile.objects.all()
-    return render(request, "hexagon_test.html", {"form": form, "profiles": profiles})
+    return render(
+        request,
+        "hexagon_test.html",
+        {"form": form, "profiles": profiles},
+    )
 
 
 def medicimbal_test_view(request):
     if request.method == "POST":
         form = MedicimbalForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
 
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "medicimbal_throw_1": float(request.POST.get("medicimbal_throw_1")),
-                    "medicimbal_throw_2": float(request.POST.get("medicimbal_throw_2")),
-                    "medicimbal_throw_3": float(request.POST.get("medicimbal_throw_3")),
-                },
-            )
+            # Retrieve the existing TestResult object if it exists
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = TestResult(profile=profile)
+
+            # Update the fields only if new values are provided
+            medicimbal_throw_1 = request.POST.get("medicimbal_throw_1")
+            medicimbal_throw_2 = request.POST.get("medicimbal_throw_2")
+            medicimbal_throw_3 = request.POST.get("medicimbal_throw_3")
+
+            if medicimbal_throw_1:
+                test_result.medicimbal_throw_1 = float(medicimbal_throw_1)
+            if medicimbal_throw_2:
+                test_result.medicimbal_throw_2 = float(medicimbal_throw_2)
+            if medicimbal_throw_3:
+                test_result.medicimbal_throw_3 = float(medicimbal_throw_3)
 
             # Calculate score
             age = test_result.profile.age
@@ -224,19 +255,23 @@ def medicimbal_test_view(request):
             throw_1 = test_result.medicimbal_throw_1
             throw_2 = test_result.medicimbal_throw_2
             throw_3 = test_result.medicimbal_throw_3
-
             score = calculate_score(
                 age, gender, "medicimbal", throw_1, throw_2, throw_3
             )
             test_result.medicimbal_score = score
-            test_result.save()
+
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)
+            print(form.errors)  # Debug print form errors
     else:
         form = MedicimbalForm()
     profiles = Profile.objects.all()
-    return render(request, "medicimbal_test.html", {"form": form, "profiles": profiles})
+    return render(
+        request,
+        "medicimbal_test.html",
+        {"form": form, "profiles": profiles},
+    )
 
 
 def jet_test_view(request):
@@ -270,7 +305,7 @@ def jet_test_view(request):
             score = calculate_score(age, gender, "jet", jet_distance)
             test_result.jet_score = score
             test_result.jet_distance = jet_distance
-            test_result.save()
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)
@@ -438,42 +473,41 @@ def triple_jump_test_view(request):
     if request.method == "POST":
         form = TripleJumpForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
 
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "triple_jump_distance_1": float(
-                        request.POST.get("triple_jump_distance_1")
-                    ),
-                    "triple_jump_distance_2": float(
-                        request.POST.get("triple_jump_distance_2")
-                    ),
-                    "triple_jump_distance_3": float(
-                        request.POST.get("triple_jump_distance_3")
-                    ),
-                },
-            )
+            # Retrieve the existing TestResult object if it exists
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = TestResult(profile=profile)
+
+            # Update the fields only if new values are provided
+            triple_jump_distance = request.POST.get("triple_jump_distance")
+
+            if triple_jump_distance:
+                test_result.triple_jump_distance = float(triple_jump_distance)
 
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
-            jump_1 = test_result.triple_jump_distance_1
-            jump_2 = test_result.triple_jump_distance_2
-            jump_3 = test_result.triple_jump_distance_3
-
-            score = calculate_score(age, gender, "triple_jump", jump_1, jump_2, jump_3)
-
+            distance = test_result.triple_jump_distance
+            score = calculate_score(age, gender, "triple_jump", distance)
             test_result.triple_jump_score = score
-            test_result.save()
+
+            test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
+        else:
+            print(form.errors)  # Debug print form errors
     else:
         form = TripleJumpForm()
     profiles = Profile.objects.all()
     return render(
-        request, "triple_jump_test.html", {"form": form, "profiles": profiles}
+        request,
+        "triple_jump_test.html",
+        {"form": form, "profiles": profiles},
     )
 
 
