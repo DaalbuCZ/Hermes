@@ -90,7 +90,6 @@ def ladder_test_view(request):
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
             # Retrieve the existing TestResult object if it exists
             try:
                 test_result = TestResult.objects.using(get_selected_db(request)).get(
@@ -98,16 +97,13 @@ def ladder_test_view(request):
                 )
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
-
             # Update the fields only if new values are provided
             ladder_time_1 = request.POST.get("ladder_time_1")
             ladder_time_2 = request.POST.get("ladder_time_2")
-
             if ladder_time_1:
                 test_result.ladder_time_1 = float(ladder_time_1)
             if ladder_time_2:
                 test_result.ladder_time_2 = float(ladder_time_2)
-
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
@@ -115,18 +111,27 @@ def ladder_test_view(request):
             time_2 = test_result.ladder_time_2
             score = calculate_score(age, gender, "ladder", time_1, time_2)
             test_result.ladder_score = score
-
             test_result.save(using=get_selected_db(request))
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = LadderForm()
-    profiles = Profile.objects.all()
+        profiles = Profile.objects.all()
+        test_result = None
+        profile_id = request.GET.get("profile_id")
+        if profile_id:
+            profile = get_object_or_404(Profile, id=profile_id)
+            try:
+                test_result = TestResult.objects.using(get_selected_db(request)).get(
+                    profile=profile
+                )
+            except TestResult.DoesNotExist:
+                test_result = None
     return render(
         request,
         "ladder_test.html",
-        {"form": form, "profiles": profiles},
+        {"form": form, "profiles": profiles, "test_result": test_result},
     )
 
 
