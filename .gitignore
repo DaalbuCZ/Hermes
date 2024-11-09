@@ -6,3 +6,6 @@
 /hermes/package-lock.json
 /hermes/package.json
 /hermes/dbmanager/__pycache__
+/hermes/.env
+/env
+*.env
