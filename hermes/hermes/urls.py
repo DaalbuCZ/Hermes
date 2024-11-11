@@ -24,4 +24,5 @@ urlpatterns = [
     path("tests/", include("tests.urls")),
     path("", views.index, name="index"),
     path("dbmanager/", include("dbmanager.urls")),
+    path("unicorn/", include("django_unicorn.urls")),
 ]

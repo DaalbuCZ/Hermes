@@ -1,0 +1,11 @@
+<div>
+    <select unicorn:model="profile_id">
+        <option value="">Select Profile</option>
+        {% for profile in profiles %}
+        <option value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</option>
+        {% endfor %}
+    </select>
+    <input type="number" unicorn:model="input_value" />
+    <button unicorn:click="calculate_score">Calculate Score</button>
+    <p>Score: {{ score }}</p>
+</div>

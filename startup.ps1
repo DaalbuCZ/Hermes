@@ -13,5 +13,11 @@ if ($migrate -eq "yes") {
     python manage.py migrate
 }
 
+# Promt to run collectstatic
+$collectstatic = Read-Host "Do you want to run 'python manage.py collectstatic'? (yes/no)"
+if ($collectstatic -eq "yes") {
+    python manage.py collectstatic
+}
+
 # Run the server
 python manage.py runserver

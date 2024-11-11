@@ -371,6 +371,92 @@ def calculate_score(age, gender, test, *args):
 # print(score)
 
 
+def quick_calculate(age, gender, test, *args):
+    if age < 10:
+        age = 10
+    elif age > 20:
+        age = 20
+
+    match test:
+        case "ladder":
+            test_score_table_m = ladder_score_table_m
+            test_score_table_f = ladder_score_table_f
+        case "brace":
+            test_score_table_m = brace_score_table_m
+            test_score_table_f = brace_score_table_f
+        case "hexagon":
+            test_score_table_m = hexagon_score_table_m
+            test_score_table_f = hexagon_score_table_f
+        case "medicimbal":
+            test_score_table_m = medicimbal_score_table_m
+            test_score_table_f = medicimbal_score_table_f
+        case "triple_jump":
+            test_score_table_m = triple_jump_score_table_m
+            test_score_table_f = triple_jump_score_table_f
+        case "jet":
+            test_score_table_m = jet_score_table_m
+            test_score_table_f = jet_score_table_f
+        case "beep_test":
+            test_score_table_m = beep_test_score_table_m
+            test_score_table_f = beep_test_score_table_f
+        case "y_test":
+            test_score_table_m = y_test_score_table_m
+            test_score_table_f = y_test_score_table_f
+        case _:
+            return  # TODO: add exception handling here
+
+    # Get the scores for the given age and test
+    if gender == "M":
+        age_scores = test_score_table_m.get(age)
+    elif gender == "F":
+        age_scores = test_score_table_f.get(age)
+    else:
+        return  # TODO: add exception handling here
+
+    if test == "ladder" or test == "brace" or test == "hexagon":
+        time = args[0]
+        for i, score in enumerate(age_scores):
+            if time >= score:
+                return i
+        # If score is lower than the lowest score in the table
+        return len(age_scores)
+
+    elif test == "medicimbal" or test == "triple_jump":
+        distance = args[0]
+
+        for i, score in enumerate(age_scores):
+            if distance <= score:
+                return i
+        # If score is higher than the highest score in the table
+        return len(age_scores)
+
+    # elif test == "jet" or test == "beep_test":
+    #     distance_best = args[0]
+
+    #     for i, score in enumerate(age_scores):
+    #         if distance_best <= score:
+    #             return i
+    #     # If score is higher than the highest score in the table
+    #     return len(age_scores)
+
+    # elif test == "y_test":
+    #     height = args[0]
+    #     sum_reach = 0
+    #     for i in range(1, 13):
+    #         sum_reach += args[i]
+
+    #     index = math.floor(sum_reach / height / 12 * 100) / 100.0
+    #     for i, score in enumerate(reversed(age_scores)):
+    #         if index > score:
+    #             return len(age_scores) - i - 1
+    #         elif index == score:
+    #             return len(age_scores) - i
+    #     # If score is higher than the highest score in the table
+    #     return len(age_scores)
+
+    return  # TODO: error handling here
+
+
 def calculate_y_test_index(height, *args):
     sum_reach = 0
     for i in range(0, 12):

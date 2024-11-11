@@ -9,3 +9,4 @@
 /hermes/.env
 /env
 *.env
+/hermes/tests/components/__pycache__

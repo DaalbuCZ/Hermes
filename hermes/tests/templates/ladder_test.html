@@ -1,42 +1,41 @@
+{% load unicorn %}
 {% load static %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <title>Ladder Test</title>
-  <!-- Include Select2 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-  <!-- Add custom CSS for styling -->
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladder Test</title>
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% unicorn_scripts %}
 </head>
 
 <body>
-  <h2>Ladder Test</h2>
-  <form method="POST">
-    {% csrf_token %} {{ form.as_p }}
-    <label for="profile_id">Select Profile:</label>
-    <select name="profile_id" id="profile_id" style="width: 300px;">
-      {% for profile in profiles %}
-      <option value="{{ profile.id }}">
-        {{ profile.surname}} {{ profile.name }}
-      </option>
-      {% endfor %}
-    </select>
-    <button type="submit">Submit</button>
-  </form>
+    <h2>Ladder Test</h2>
 
-  <!-- Include jQuery and Select2 JS -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-  <script>
-    $(document).ready(function () {
-      // Initialize Select2
-      $('#profile_id').select2({
-        placeholder: 'Select a profile',
-        allowClear: true
-      });
-    });
-  </script>
+    <!-- The Unicorn component will handle both real-time calculation and form submission -->
+    {% unicorn "ladder_score" %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#profile_id').select2({
+                placeholder: 'Select a profile',
+                allowClear: true
+            });
+        });
+    </script>
 </body>
 
 </html>

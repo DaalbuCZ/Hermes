@@ -1,0 +1,75 @@
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+}
+
+h2 {
+    color: #333;
+}
+
+form {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 600px;
+    margin: auto;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+select, input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#profile_search {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 300px;
+  border: 1px solid #ccc;
+  margin-top: 0;
+  z-index: 1000;
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.dropdown-content li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.dropdown-content li:hover {
+  background-color: #f1f1f1;
+}
