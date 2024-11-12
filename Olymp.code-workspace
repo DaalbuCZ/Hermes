@@ -4,5 +4,17 @@
       "path": "./"
     }
   ],
-  "settings": {}
+  "settings": {
+    "sqltools.connections": [
+      {
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "Hermes",
+        "username": "daalbu",
+        "database": "hermes_db"
+      }
+    ]
+  }
 }
