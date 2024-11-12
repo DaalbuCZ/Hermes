@@ -6,34 +6,63 @@ from tests.score_tables import quick_calculate
 class LadderScoreView(UnicornView):
     template_name = "unicorn/ladder_score.html"
     profile_id = None
-    input_value = 0
-    score = 0
+    time_1 = None
+    time_2 = None
+    score_1 = 0
+    score_2 = 0
     profiles = []
+    errors = {"time_1": "", "time_2": "", "profile": ""}
 
     def mount(self):
         """Load profiles when component is initialized"""
         self.profiles = Profile.objects.all()
-        print("Component mounted with profiles:", len(self.profiles))
+
+    def validate_time(self, time_value, field_name):
+        """Validate time input"""
+        if time_value is None:
+            self.errors[field_name] = ""
+            return False
+
+        try:
+            time_float = float(time_value)
+            if time_float <= 0:
+                self.errors[field_name] = "Time must be greater than 0"
+                return False
+            self.errors[field_name] = ""
+            return True
+        except ValueError:
+            self.errors[field_name] = "Please enter a valid number"
+            return False
 
     def calculate_ladder_score(self):
-        """Calculate score whenever input changes"""
-        print(
-            f"Calculating score - Profile ID: {self.profile_id}, Input: {self.input_value}"
-        )
+        """Calculate scores whenever inputs change"""
+        if not self.profile_id:
+            self.errors["profile"] = "Please select a profile"
+            return
 
-        if self.profile_id and self.input_value:
-            try:
-                profile = Profile.objects.get(id=self.profile_id)
-                input_value = float(self.input_value)
-                print(f"Profile found - Age: {profile.age}, Gender: {profile.gender}")
+        self.errors["profile"] = ""
+        time1_valid = self.validate_time(self.time_1, "time_1")
+        time2_valid = self.validate_time(self.time_2, "time_2")
 
-                self.score = quick_calculate(
-                    profile.age, profile.gender, "ladder", input_value
+        if not (time1_valid or time2_valid):
+            return
+
+        try:
+            profile = Profile.objects.get(id=self.profile_id)
+
+            if time1_valid:
+                time_1_value = float(self.time_1)
+                self.score_1 = quick_calculate(
+                    profile.age, profile.gender, "ladder", time_1_value
                 )
-                print(f"Score calculated: {self.score}")
 
-            except (Profile.DoesNotExist, ValueError) as e:
-                print(f"Error calculating score: {e}")
-                self.score = 0
-        else:
-            print("Missing profile_id or input_value")
+            if time2_valid:
+                time_2_value = float(self.time_2)
+                self.score_2 = quick_calculate(
+                    profile.age, profile.gender, "ladder", time_2_value
+                )
+
+        except Profile.DoesNotExist:
+            self.errors["profile"] = "Selected profile not found"
+            self.score_1 = 0
+            self.score_2 = 0
