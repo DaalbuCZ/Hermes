@@ -1,6 +1,6 @@
 from django_unicorn.components import UnicornView
 from tests.models import Profile, TestResult
-from tests.score_tables import quick_calculate
+from tests.score_tables import quick_calculate, calculate_score
 from django.shortcuts import redirect
 
 
@@ -60,7 +60,13 @@ class LadderScoreView(UnicornView):
                 if self.time_2:
                     test_result.ladder_time_2 = float(self.time_2)
 
-                test_result.ladder_score = max(self.score_1, self.score_2)
+                test_result.ladder_score = calculate_score(
+                    profile.age,
+                    profile.gender,
+                    "ladder",
+                    test_result.ladder_time_1,
+                    test_result.ladder_time_2,
+                )
                 test_result.save()
 
                 return redirect("adjudicator_dashboard")
