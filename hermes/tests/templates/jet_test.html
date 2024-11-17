@@ -1,28 +1,33 @@
+{% load unicorn %}
 {% load static %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
   <title>Jet Test</title>
-  <!-- Add custom CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  {% unicorn_scripts %}
 </head>
 
 <body>
   <h2>Jet Test</h2>
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <label for="profile_search">Select Profile:</label>
-    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
-    <ul id="profile_list" class="dropdown-content">
-      {% for profile in profiles %}
-      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-      {% endfor %}
-    </ul>
-    <input type="hidden" name="profile_id" id="profile_id">
-    <button type="submit">Submit</button>
-  </form>
+
+  <div class="container">
+    <div class="profile-selector">
+      <label for="profile_search">Select Profile:</label>
+      <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
+      <ul id="profile_list" class="dropdown-content">
+        {% for profile in profiles %}
+        <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% unicorn 'jet-score' %}
+  </div>
   <!-- Include jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>

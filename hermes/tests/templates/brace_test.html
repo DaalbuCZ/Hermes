@@ -1,30 +1,38 @@
+{% load unicorn %}
 {% load static %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
   <title>Brace Test</title>
-  <!-- Add custom CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  {% unicorn_scripts %}
 </head>
 
 <body>
   <h2>Brace Test</h2>
-  <form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <label for="profile_search">Select Profile:</label>
-    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
-    <ul id="profile_list" class="dropdown-content">
-      {% for profile in profiles %}
-      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-      {% endfor %}
-    </ul>
-    <input type="hidden" name="profile_id" id="profile_id">
-    <button type="submit">Submit</button>
-  </form>
-  <!-- Include jQuery -->
+
+  <div class="container">
+    <div class="profile-selector">
+      <label for="profile_search">Select Profile:</label>
+      <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
+      <ul id="profile_list" class="dropdown-content">
+        {% for profile in profiles %}
+        <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+        {% endfor %}
+      </ul>
+      <input type="hidden" name="profile_id" id="profile_id">
+    </div>
+
+    {% unicorn 'brace-score' %}
+  </div>
+
+  <!-- Rest of code... -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
   <script>
     $(document).ready(function () {
       $('#profile_search').on('keyup focus', function () {
@@ -41,6 +49,12 @@
         $('#profile_search').val(selectedText);
         $('#profile_id').val(selectedValue);
         $('#profile_list').hide();
+
+        try {
+          Unicorn.call('brace-score', 'update_profile', selectedValue);
+        } catch (error) {
+          console.error('Error updating profile in Unicorn component:', error);
+        }
       });
 
       $(document).on('click', function (e) {
@@ -50,6 +64,46 @@
       });
     });
   </script>
+
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .profile-selector {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .calculator-form {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .input-group {
+      margin: 15px 0;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .score-display {
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+  </style>
 </body>
 
 </html>

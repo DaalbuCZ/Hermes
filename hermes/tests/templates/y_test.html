@@ -1,31 +1,37 @@
+{% load unicorn %}
 {% load static %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+  <meta charset="UTF-8">
   <title>Y Test</title>
-  <!-- Add custom CSS for styling -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  {% unicorn_scripts %}
 </head>
 
 <body>
   <h2>Y Test</h2>
-  <form method="POST">
-    {% csrf_token %} {{ form.as_p }}
-    <label for="profile_search">Select Profile:</label>
-    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
-    <ul id="profile_list" class="dropdown-content">
-      {% for profile in profiles %}
-      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-      {% endfor %}
-    </ul>
-    <input type="hidden" name="profile_id" id="profile_id">
-    <button type="submit">Submit</button>
-  </form>
-  <!-- Include jQuery -->
+
+  <div class="container">
+    <div class="profile-selector">
+      <label for="profile_search">Select Profile:</label>
+      <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
+      <ul id="profile_list" class="dropdown-content">
+        {% for profile in profiles %}
+        <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% unicorn 'y-test-score' %}
+  </div>
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
   <script>
-    // Same JavaScript as in ladder_test.html
     $(document).ready(function () {
       $('#profile_search').on('keyup focus', function () {
         var value = $(this).val().toLowerCase();
@@ -39,8 +45,13 @@
         var selectedText = $(this).text();
         var selectedValue = $(this).data('value');
         $('#profile_search').val(selectedText);
-        $('#profile_id').val(selectedValue);
         $('#profile_list').hide();
+
+        try {
+          Unicorn.call('y-test-score', 'update_profile', selectedValue);
+        } catch (error) {
+          console.error('Error updating profile in Unicorn component:', error);
+        }
       });
 
       $(document).on('click', function (e) {
