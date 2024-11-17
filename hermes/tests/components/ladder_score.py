@@ -1,6 +1,7 @@
 from django_unicorn.components import UnicornView
-from tests.models import Profile
+from tests.models import Profile, TestResult
 from tests.score_tables import quick_calculate
+from django.shortcuts import redirect
 
 
 class LadderScoreView(UnicornView):
@@ -46,3 +47,24 @@ class LadderScoreView(UnicornView):
         """Update profile_id and recalculate scores"""
         self.profile_id = profile_id
         self.calculate_ladder_score()
+
+    def save_results(self):
+        """Save the test results to the database"""
+        if self.profile_id and (self.time_1 or self.time_2):
+            try:
+                profile = Profile.objects.get(id=self.profile_id)
+                test_result, created = TestResult.objects.get_or_create(profile=profile)
+
+                if self.time_1:
+                    test_result.ladder_time_1 = float(self.time_1)
+                if self.time_2:
+                    test_result.ladder_time_2 = float(self.time_2)
+
+                test_result.ladder_score = max(self.score_1, self.score_2)
+                test_result.save()
+
+                return redirect("adjudicator_dashboard")
+            except Exception as e:
+                print(f"Error saving results: {e}")
+                return False
+        return False
