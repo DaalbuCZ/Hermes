@@ -2,8 +2,8 @@
 	<form class="calculator-form" unicorn:submit="save_results">
 		<div class="input-group">
 			<label>Hexagon Time Clockwise:</label>
-			<input type="number" step="0.01" name="hexagon_time_cw" unicorn:model.debounce-500="time_cw" 
-				   unicorn:change="calculate_hexagon_score">
+			<input type="number" step="0.01" min="0" name="hexagon_time_cw" unicorn:model="time_cw"
+				unicorn:change="calculate_hexagon_score">
 			{% if errors.time_cw %}
 			<div class="error-message">{{ errors.time_cw }}</div>
 			{% endif %}
@@ -11,8 +11,8 @@
 
 		<div class="input-group">
 			<label>Hexagon Time Counter-Clockwise:</label>
-			<input type="number" step="0.01" name="hexagon_time_ccw" unicorn:model.debounce-500="time_ccw"
-				   unicorn:change="calculate_hexagon_score">
+			<input type="number" step="0.01" min="0" name="hexagon_time_ccw" unicorn:model="time_ccw"
+				unicorn:change="calculate_hexagon_score">
 			{% if errors.time_ccw %}
 			<div class="error-message">{{ errors.time_ccw }}</div>
 			{% endif %}

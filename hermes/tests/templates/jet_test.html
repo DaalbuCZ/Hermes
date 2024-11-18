@@ -28,10 +28,10 @@
 
     {% unicorn 'jet-score' %}
   </div>
-  <!-- Include jQuery -->
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
   <script>
-    // Same JavaScript as in ladder_test.html
     $(document).ready(function () {
       $('#profile_search').on('keyup focus', function () {
         var value = $(this).val().toLowerCase();
@@ -45,8 +45,13 @@
         var selectedText = $(this).text();
         var selectedValue = $(this).data('value');
         $('#profile_search').val(selectedText);
-        $('#profile_id').val(selectedValue);
         $('#profile_list').hide();
+
+        try {
+          Unicorn.call('jet-score', 'update_profile', selectedValue);
+        } catch (error) {
+          console.error('Error updating profile in Unicorn component:', error);
+        }
       });
 
       $(document).on('click', function (e) {
@@ -56,6 +61,46 @@
       });
     });
   </script>
+
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .profile-selector {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .calculator-form {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+
+    .input-group {
+      margin: 15px 0;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .score-display {
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+  </style>
 </body>
 
 </html>

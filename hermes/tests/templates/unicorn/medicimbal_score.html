@@ -2,7 +2,7 @@
 	<form class="calculator-form" unicorn:submit="save_results">
 		<div class="input-group">
 			<label>Medicimbal Throw 1 (meters):</label>
-			<input type="number" step="0.01" name="medicimbal_throw_1" unicorn:model.debounce-500="throw_1" 
+			<input type="number" step="0.01" min="0" name="medicimbal_throw_1" unicorn:model="throw_1" 
 				   unicorn:change="calculate_medicimbal_score">
 			{% if errors.throw_1 %}
 			<div class="error-message">{{ errors.throw_1 }}</div>
@@ -11,7 +11,7 @@
 
 		<div class="input-group">
 			<label>Medicimbal Throw 2 (meters):</label>
-			<input type="number" step="0.01" name="medicimbal_throw_2" unicorn:model.debounce-500="throw_2"
+			<input type="number" step="0.01" min="0" name="medicimbal_throw_2" unicorn:model="throw_2"
 				   unicorn:change="calculate_medicimbal_score">
 			{% if errors.throw_2 %}
 			<div class="error-message">{{ errors.throw_2 }}</div>
@@ -20,7 +20,7 @@
 
 		<div class="input-group">
 			<label>Medicimbal Throw 3 (meters):</label>
-			<input type="number" step="0.01" name="medicimbal_throw_3" unicorn:model.debounce-500="throw_3"
+			<input type="number" step="0.01" min="0" name="medicimbal_throw_3" unicorn:model="throw_3"
 				   unicorn:change="calculate_medicimbal_score">
 			{% if errors.throw_3 %}
 			<div class="error-message">{{ errors.throw_3 }}</div>

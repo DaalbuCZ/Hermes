@@ -7,8 +7,8 @@ from django.shortcuts import redirect
 class BraceScoreView(UnicornView):
     template_name = "unicorn/brace_score.html"
     profile_id = None
-    time_1 = 0
-    time_2 = 0
+    time_1 = ""
+    time_2 = ""
     score_1 = 0
     score_2 = 0
     profiles = []
@@ -17,6 +17,16 @@ class BraceScoreView(UnicornView):
         """Load profiles when component is initialized"""
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
+
+    def clean_measurement(self, value):
+        """Clean and validate measurement input"""
+        if not value and value != 0:  # Handle empty strings and None
+            return None
+        try:
+            cleaned = float(str(value).strip())
+            return cleaned if cleaned >= 0 else None
+        except (ValueError, TypeError):
+            return None
 
     def calculate_brace_score(self):
         """Calculate scores whenever inputs change"""
@@ -27,16 +37,21 @@ class BraceScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                if self.time_1:
+                
+                # Clean and validate inputs
+                clean_time_1 = self.clean_measurement(self.time_1)
+                clean_time_2 = self.clean_measurement(self.time_2)
+                
+                if clean_time_1 is not None:
                     self.score_1 = quick_calculate(
-                        profile.age, profile.gender, "brace", float(self.time_1)
+                        profile.age, profile.gender, "brace", clean_time_1
                     )
-                if self.time_2:
+                if clean_time_2 is not None:
                     self.score_2 = quick_calculate(
-                        profile.age, profile.gender, "brace", float(self.time_2)
+                        profile.age, profile.gender, "brace", clean_time_2
                     )
                 print(f"Scores calculated: {self.score_1}, {self.score_2}")
-            except (Profile.DoesNotExist, ValueError) as e:
+            except Profile.DoesNotExist as e:
                 print(f"Error calculating scores: {e}")
                 self.score_1 = 0
                 self.score_2 = 0
@@ -50,15 +65,19 @@ class BraceScoreView(UnicornView):
 
     def save_results(self):
         """Save the test results to the database"""
-        if self.profile_id and (self.time_1 or self.time_2):
+        if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
                 test_result, created = TestResult.objects.get_or_create(profile=profile)
 
-                if self.time_1:
-                    test_result.brace_time_1 = float(self.time_1)
-                if self.time_2:
-                    test_result.brace_time_2 = float(self.time_2)
+                # Clean and validate inputs before saving
+                clean_time_1 = self.clean_measurement(self.time_1)
+                clean_time_2 = self.clean_measurement(self.time_2)
+
+                if clean_time_1 is not None:
+                    test_result.brace_time_1 = clean_time_1
+                if clean_time_2 is not None:
+                    test_result.brace_time_2 = clean_time_2
 
                 test_result.brace_score = max(self.score_1, self.score_2)
                 test_result.save()
@@ -68,3 +87,4 @@ class BraceScoreView(UnicornView):
                 print(f"Error saving results: {e}")
                 return False
         return False
+

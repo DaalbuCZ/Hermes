@@ -439,20 +439,16 @@ def quick_calculate(age, gender, test, *args):
     #     # If score is higher than the highest score in the table
     #     return len(age_scores)
 
-    # elif test == "y_test":
-    #     height = args[0]
-    #     sum_reach = 0
-    #     for i in range(1, 13):
-    #         sum_reach += args[i]
-
-    #     index = math.floor(sum_reach / height / 12 * 100) / 100.0
-    #     for i, score in enumerate(reversed(age_scores)):
-    #         if index > score:
-    #             return len(age_scores) - i - 1
-    #         elif index == score:
-    #             return len(age_scores) - i
-    #     # If score is higher than the highest score in the table
-    #     return len(age_scores)
+    elif test == "y_test":
+        index = args[0]
+        
+        for i, score in enumerate(reversed(age_scores)):
+            if index > score:
+                return len(age_scores) - i - 1
+            elif index == score:
+                return len(age_scores) - i
+        # If score is higher than the highest score in the table
+        return len(age_scores)
 
     return  # TODO: error handling here
 

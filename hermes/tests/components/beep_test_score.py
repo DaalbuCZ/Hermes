@@ -1,6 +1,6 @@
 from django_unicorn.components import UnicornView
 from tests.models import Profile, TestResult
-from tests.score_tables import quick_calculate, calculate_beep_test_total_laps
+from tests.score_tables import calculate_score, calculate_beep_test_total_laps
 from django.shortcuts import redirect
 
 
@@ -33,7 +33,7 @@ class BeepTestScoreView(UnicornView):
                 self.total_laps = calculate_beep_test_total_laps(level, laps)
 
                 if self.total_laps:
-                    self.score = quick_calculate(
+                    self.score = calculate_score(
                         profile.age, profile.gender, "beep_test", self.total_laps
                     )
                     print(
