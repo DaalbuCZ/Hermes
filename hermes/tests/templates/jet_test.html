@@ -1,106 +1,103 @@
+{% extends 'base.html' %}
 {% load unicorn %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
+{% block title %}Jet Test{% endblock %}
 
-<head>
-  <meta charset="UTF-8">
-  <title>Jet Test</title>
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  {% unicorn_scripts %}
-</head>
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<style>
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
 
-<body>
-  <h2>Jet Test</h2>
+  .profile-selector {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
 
-  <div class="container">
-    <div class="profile-selector">
-      <label for="profile_search">Select Profile:</label>
-      <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
-      <ul id="profile_list" class="dropdown-content">
-        {% for profile in profiles %}
-        <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-        {% endfor %}
-      </ul>
-    </div>
+  .calculator-form {
+    max-width: 600px;
+    margin: 20px auto;
+  }
 
-    {% unicorn 'jet-score' %}
+  .input-group {
+    margin: 15px 0;
+  }
+
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .score-display {
+    margin: 15px 0;
+    font-weight: bold;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% unicorn_scripts %}
+<h2>Jet Test</h2>
+
+<div class="container">
+  <div class="profile-selector">
+    <label for="profile_search">Select Profile:</label>
+    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
+    <ul id="profile_list" class="dropdown-content">
+      {% for profile in profiles %}
+      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+      {% endfor %}
+    </ul>
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-  <script>
-    $(document).ready(function () {
-      $('#profile_search').on('keyup focus', function () {
-        var value = $(this).val().toLowerCase();
-        $('#profile_list li').filter(function () {
-          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-        });
-        $('#profile_list').show();
-      });
+  {% unicorn 'jet-score' %}
+</div>
+{% endblock %}
 
-      $('#profile_list li').on('click', function () {
-        var selectedText = $(this).text();
-        var selectedValue = $(this).data('value');
-        $('#profile_search').val(selectedText);
-        $('#profile_list').hide();
-
-        try {
-          Unicorn.call('jet-score', 'update_profile', selectedValue);
-        } catch (error) {
-          console.error('Error updating profile in Unicorn component:', error);
-        }
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#profile_search').on('keyup focus', function () {
+      var value = $(this).val().toLowerCase();
+      $('#profile_list li').filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
       });
-
-      $(document).on('click', function (e) {
-        if (!$(e.target).closest('#profile_search, #profile_list').length) {
-          $('#profile_list').hide();
-        }
-      });
+      $('#profile_list').show();
     });
-  </script>
 
-  <style>
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    $('#profile_list li').on('click', function () {
+      var selectedText = $(this).text();
+      var selectedValue = $(this).data('value');
+      $('#profile_search').val(selectedText);
+      $('#profile_list').hide();
 
-    .profile-selector {
-      margin-bottom: 30px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 5px;
-    }
+      try {
+        Unicorn.call('jet-score', 'update_profile', selectedValue);
+      } catch (error) {
+        console.error('Error updating profile in Unicorn component:', error);
+      }
+    });
 
-    .calculator-form {
-      max-width: 600px;
-      margin: 20px auto;
-    }
-
-    .input-group {
-      margin: 15px 0;
-    }
-
-    .input-group label {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .score-display {
-      margin: 15px 0;
-      font-weight: bold;
-    }
-
-    .error-message {
-      color: #dc3545;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-    }
-  </style>
-</body>
-
-</html>
+    $(document).on('click', function (e) {
+      if (!$(e.target).closest('#profile_search, #profile_list').length) {
+        $('#profile_list').hide();
+      }
+    });
+  });
+</script>
+{% endblock %}

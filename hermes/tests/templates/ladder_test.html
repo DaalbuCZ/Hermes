@@ -1,131 +1,129 @@
-{% load unicorn %}
-{% load static %}
+{% extends 'base.html' %} {% load unicorn %} {% load static %} {% block title
+%}Ladder Test{% endblock %} {% block extra_css %}
+<link
+  href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
+  rel="stylesheet"
+/>
+<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+<style>
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
 
-<!DOCTYPE html>
-<html lang="en">
+  .profile-selector {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
 
-<head>
-    <meta charset="UTF-8">
-    <title>Ladder Test</title>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    {% unicorn_scripts %}
-</head>
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .dropdown-content li {
+    padding: 12px 16px;
+    cursor: pointer;
+  }
+
+  .dropdown-content li:hover {
+    background-color: #f1f1f1;
+  }
+
+  .calculator-form {
+    max-width: 600px;
+    margin: 20px auto;
+  }
+
+  .input-group {
+    margin: 15px 0;
+  }
+
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .score-display {
+    margin: 15px 0;
+    font-weight: bold;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  .select2-container {
+    margin-bottom: 15px;
+  }
+</style>
+{% endblock %} {% block content %} {% unicorn_scripts %}
 <h2>Ladder Test</h2>
 
 <div class="container">
-    <div class="profile-selector">
-        <label for="profile_search">Select Profile:</label>
-        <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off">
-        <ul id="profile_list" class="dropdown-content">
-            {% for profile in profiles %}
-            <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-            {% endfor %}
-        </ul>
-        <input type="hidden" name="profile_id" id="profile_id">
-    </div>
+  <div class="profile-selector">
+    <label for="profile_search">Select Profile:</label>
+    <input
+      type="text"
+      id="profile_search"
+      placeholder="Search profiles..."
+      autocomplete="off"
+    />
+    <ul id="profile_list" class="dropdown-content">
+      {% for profile in profiles %}
+      <li data-value="{{ profile.id }}">
+        {{ profile.surname }} {{ profile.name }}
+      </li>
+      {% endfor %}
+    </ul>
+    <input type="hidden" name="profile_id" id="profile_id" />
+  </div>
 
-    {% unicorn 'ladder-score' %}
+  {% unicorn 'ladder-score' %}
 </div>
-
+{% endblock %} {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $('#profile_search').on('keyup focus', function () {
-            var value = $(this).val().toLowerCase();
-            $('#profile_list li').filter(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-            });
-            $('#profile_list').show();
-        });
-
-        $('#profile_list li').on('click', function () {
-            var selectedText = $(this).text();
-            var selectedValue = $(this).data('value');
-            $('#profile_search').val(selectedText);
-            $('#profile_id').val(selectedValue);
-            $('#profile_list').hide();
-
-            // Call Unicorn component's update_profile method
-            try {
-                Unicorn.call('ladder-score', 'update_profile', selectedValue);
-            } catch (error) {
-                console.error('Error updating profile in Unicorn component:', error);
-            }
-        });
-
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('#profile_search, #profile_list').length) {
-                $('#profile_list').hide();
-            }
-        });
+  $(document).ready(function () {
+    $("#profile_search").on("keyup focus", function () {
+      var value = $(this).val().toLowerCase();
+      $("#profile_list li").filter(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+      });
+      $("#profile_list").show();
     });
+
+    $("#profile_list li").on("click", function () {
+      var selectedText = $(this).text();
+      var selectedValue = $(this).data("value");
+      $("#profile_search").val(selectedText);
+      $("#profile_id").val(selectedValue);
+      $("#profile_list").hide();
+
+      try {
+        Unicorn.call("ladder-score", "update_profile", selectedValue);
+      } catch (error) {
+        console.error("Error updating profile in Unicorn component:", error);
+      }
+    });
+
+    $(document).on("click", function (e) {
+      if (!$(e.target).closest("#profile_search, #profile_list").length) {
+        $("#profile_list").hide();
+      }
+    });
+  });
 </script>
-
-<style>
-    .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .profile-selector {
-        margin-bottom: 30px;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-    }
-
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        background-color: #f9f9f9;
-        min-width: 160px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-        z-index: 1;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    .dropdown-content li {
-        padding: 12px 16px;
-        cursor: pointer;
-    }
-
-    .dropdown-content li:hover {
-        background-color: #f1f1f1;
-    }
-
-    .calculator-form {
-        max-width: 600px;
-        margin: 20px auto;
-    }
-
-    .input-group {
-        margin: 15px 0;
-    }
-
-    .input-group label {
-        display: block;
-        margin-bottom: 5px;
-    }
-
-    .score-display {
-        margin: 15px 0;
-        font-weight: bold;
-    }
-
-    .error-message {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .select2-container {
-        margin-bottom: 15px;
-    }
-</style>
-</body>
-
-</html>
+{% endblock %}
