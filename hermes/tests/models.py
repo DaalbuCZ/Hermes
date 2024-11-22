@@ -1,10 +1,11 @@
 from django.db import models
+from datetime import date
 
 
 class Profile(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
-    age = models.IntegerField()
+    date_of_birth = models.DateField()
     weight = models.IntegerField()
     height = models.IntegerField()
     GENDER_CHOICES = [
@@ -16,6 +17,18 @@ class Profile(models.Model):
         choices=GENDER_CHOICES,
         default="M",
     )
+
+    @property
+    def age(self):
+        today = date.today()
+        return (
+            today.year
+            - self.date_of_birth.year
+            - (
+                (today.month, today.day)
+                < (self.date_of_birth.month, self.date_of_birth.day)
+            )
+        )
 
     def get_ladder_times(self):
         test_result = self.get_latest_test_result()

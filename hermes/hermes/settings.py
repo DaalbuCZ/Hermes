@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tests",
-    "dbmanager",
 ]
 
 MIDDLEWARE = [
@@ -143,5 +142,3 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-DATABASE_ROUTERS = ["dbmanager.db_router.TestResultDatabaseRouter"]
