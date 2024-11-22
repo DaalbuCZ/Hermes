@@ -1,49 +1,11 @@
-{% extends 'base.html' %} {% load unicorn %} {% load static %} {% block title
-%}Medicimbal Test{% endblock %} {% block extra_css %}
+{% extends 'base.html' %} {% load unicorn %} {% load static %} {% block title %}Medicimbal Test{% endblock %} {% block extra_css %}
 <link
   href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
   rel="stylesheet"
 />
 <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
-<style>
-  .container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-  }
+<link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
 
-  .profile-selector {
-    margin-bottom: 30px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-  }
-
-  .calculator-form {
-    max-width: 600px;
-    margin: 20px auto;
-  }
-
-  .input-group {
-    margin: 15px 0;
-  }
-
-  .input-group label {
-    display: block;
-    margin-bottom: 5px;
-  }
-
-  .score-display {
-    margin: 15px 0;
-    font-weight: bold;
-  }
-
-  .error-message {
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-</style>
 {% endblock %} {% block content %} {% unicorn_scripts %}
 <h2>Medicimbal Test</h2>
 
