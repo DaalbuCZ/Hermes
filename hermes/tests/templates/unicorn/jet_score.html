@@ -2,25 +2,32 @@
     <form class="calculator-form" unicorn:submit="save_results">
         <div class="input-group">
             <label>Laps:</label>
-            <input type="number" step="1" name="jet_laps" unicorn:model="laps" unicorn:change="calculate_jet_score">
+            <input type="number"
+                   step="1"
+                   name="jet_laps"
+                   unicorn:model="laps"
+                   unicorn:change="calculate_jet_score"
+                   value="{{ laps }}">
         </div>
-
         <div class="input-group">
-            <label>Sides:</label>
-            <input type="number" step="1" name="jet_sides" unicorn:model="sides" unicorn:change="calculate_jet_score">
+            <label>Sides (optional):</label>
+            <input type="number"
+                   step="1"
+                   name="jet_sides"
+                   unicorn:model="sides"
+                   unicorn:change="calculate_jet_score"
+                   value="{{ sides }}">
         </div>
-
         <div class="score-display">
             {% if distance is not None %}
-            <div>Total Distance: {{ distance }}m</div>
-            <div>Score: {{ score }}</div>
+                <div>Total Distance: {{ distance }}m</div>
+                <div>Score: {{ score }}</div>
             {% else %}
-            <div>Enter laps and sides to calculate score</div>
+                <div>Enter laps and sides to calculate score</div>
             {% endif %}
         </div>
-
-        <button type="submit" class="submit-button" {% if not profile_id %}disabled{% endif %}>
-            Save Results
-        </button>
+        <button type="submit"
+                class="submit-button"
+                {% if not profile_id %}disabled{% endif %}>Save Results</button>
     </form>
 </div>

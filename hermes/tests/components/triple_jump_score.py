@@ -67,9 +67,36 @@ class TripleJumpScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and recalculate scores"""
+        """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
-        self.calculate_triple_jump_score()
+        
+        # Reset current values
+        self.distance_1 = ""
+        self.distance_2 = ""
+        self.distance_3 = ""
+        self.score_1 = 0
+        self.score_2 = 0
+        self.score_3 = 0
+        
+        if self.profile_id:
+            try:
+                profile = Profile.objects.get(id=self.profile_id)
+                # Try to get existing test result
+                test_result = TestResult.objects.filter(profile=profile).first()
+                
+                if test_result:
+                    # Populate existing values if they exist
+                    if test_result.triple_jump_distance_1 is not None:
+                        self.distance_1 = str(test_result.triple_jump_distance_1)
+                    if test_result.triple_jump_distance_2 is not None:
+                        self.distance_2 = str(test_result.triple_jump_distance_2)
+                    if test_result.triple_jump_distance_3 is not None:
+                        self.distance_3 = str(test_result.triple_jump_distance_3)
+                    
+                    # Calculate scores for existing values
+                    self.calculate_triple_jump_score()
+            except Profile.DoesNotExist:
+                print("Selected profile not found")
 
     def save_results(self):
         """Save the test results to the database"""

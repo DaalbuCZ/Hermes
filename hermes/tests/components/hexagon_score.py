@@ -59,9 +59,32 @@ class HexagonScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and recalculate scores"""
+        """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
-        self.calculate_hexagon_score()
+        
+        # Reset current values
+        self.time_cw = ""
+        self.time_ccw = ""
+        self.score_cw = 0
+        self.score_ccw = 0
+        
+        if self.profile_id:
+            try:
+                profile = Profile.objects.get(id=self.profile_id)
+                # Try to get existing test result
+                test_result = TestResult.objects.filter(profile=profile).first()
+                
+                if test_result:
+                    # Populate existing values if they exist
+                    if test_result.hexagon_time_cw is not None:
+                        self.time_cw = str(test_result.hexagon_time_cw)
+                    if test_result.hexagon_time_ccw is not None:
+                        self.time_ccw = str(test_result.hexagon_time_ccw)
+                    
+                    # Calculate scores for existing values
+                    self.calculate_hexagon_score()
+            except Profile.DoesNotExist:
+                print("Selected profile not found")
 
     def save_results(self):
         """Save the test results to the database"""

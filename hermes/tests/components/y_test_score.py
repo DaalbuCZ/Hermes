@@ -81,9 +81,49 @@ class YTestScoreView(UnicornView):
             import traceback
             print(traceback.format_exc())
     def update_profile(self, profile_id):
-        """Update profile_id and recalculate score"""
+        """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
-        self.calculate_y_test_score()
+        
+        # Reset all values
+        self.ll_front = self.ll_left = self.ll_right = ""
+        self.rl_front = self.rl_left = self.rl_right = ""
+        self.la_left = self.la_front = self.la_back = ""
+        self.ra_right = self.ra_front = self.ra_back = ""
+        self.y_test_score = self.y_test_index = None
+        
+        if self.profile_id:
+            try:
+                profile = Profile.objects.get(id=self.profile_id)
+                # Try to get existing test result
+                test_result = TestResult.objects.filter(profile=profile).first()
+                
+                if test_result:
+                    # Map of component fields to database fields
+                    fields = {
+                        'll_front': 'y_test_ll_front',
+                        'll_left': 'y_test_ll_left',
+                        'll_right': 'y_test_ll_right',
+                        'rl_front': 'y_test_rl_front',
+                        'rl_left': 'y_test_rl_left',
+                        'rl_right': 'y_test_rl_right',
+                        'la_left': 'y_test_la_left',
+                        'la_front': 'y_test_la_front',
+                        'la_back': 'y_test_la_back',
+                        'ra_right': 'y_test_ra_right',
+                        'ra_front': 'y_test_ra_front',
+                        'ra_back': 'y_test_ra_back'
+                    }
+                    
+                    # Populate existing values if they exist
+                    for component_field, db_field in fields.items():
+                        value = getattr(test_result, db_field, None)
+                        if value is not None:
+                            setattr(self, component_field, str(value))
+                    
+                    # Calculate scores for existing values
+                    self.calculate_y_test_score()
+            except Profile.DoesNotExist:
+                print("Selected profile not found")
 
     def save_results(self):
         """Save the test results to the database"""

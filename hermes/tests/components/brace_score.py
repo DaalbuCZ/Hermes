@@ -59,9 +59,32 @@ class BraceScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and recalculate scores"""
+        """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
-        self.calculate_brace_score()
+        
+        # Reset current values
+        self.time_1 = ""
+        self.time_2 = ""
+        self.score_1 = 0
+        self.score_2 = 0
+        
+        if self.profile_id:
+            try:
+                profile = Profile.objects.get(id=self.profile_id)
+                # Try to get existing test result
+                test_result = TestResult.objects.filter(profile=profile).first()
+                
+                if test_result:
+                    # Populate existing values if they exist
+                    if test_result.brace_time_1 is not None:
+                        self.time_1 = str(test_result.brace_time_1)
+                    if test_result.brace_time_2 is not None:
+                        self.time_2 = str(test_result.brace_time_2)
+                    
+                    # Calculate scores for existing values
+                    self.calculate_brace_score()
+            except Profile.DoesNotExist:
+                print("Selected profile not found")
 
     def save_results(self):
         """Save the test results to the database"""
