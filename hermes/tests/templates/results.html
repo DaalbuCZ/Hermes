@@ -1,143 +1,124 @@
-{% extends 'base.html' %}
-{% block title %}Test Results - HERMES{% endblock %}
+{% extends "base.html" %}
+{% block title %}
+    Test Results - HERMES
+{% endblock title %}
 {% block content %}
-<h2>Test Results</h2>
-{% if messages %}
-{% for message in messages %}
-<div class="alert alert-{{ message.tags }}">{{ message }}</div>
-{% endfor %}
-{% endif %}
-<div class="table-responsive">
-    <table class="table table-striped table-bordered">
-        <thead class="thead-dark">
-            <tr>
-                <th>Surname & Name</th>
-                <th>Gender</th>
-                <th>Age</th>
-                <th>Height</th>
-                <th>Weight</th>
-
-                <th>Ladder Score</th>
-                <th>Ladder Time 1</th>
-                <th>Ladder Time 2</th>
-
-                <th>Hexagon Score</th>
-                <th>Hexagon Time CW</th>
-                <th>Hexagon Time CCW</th>
-
-                <th>Y Balance Test Score</th>
-                <th>Y Balance Test Index</th>
-                <th>Y Left Leg Front</th>
-                <th>Y Left Leg Left</th>
-                <th>Y Left Leg Right</th>
-                <th>Y Right Leg Front</th>
-                <th>Y Right Leg Right</th>
-                <th>Y Right Leg Left</th>
-                <th>Y Left Arm Left</th>
-                <th>Y Left Arm Front</th>
-                <th>Y Left Arm Back</th>
-                <th>Y Right Arm Right</th>
-                <th>Y Right Arm Front</th>
-                <th>Y Right Arm Back</th>
-
-                <th>Brace Score</th>
-                <th>Brace Time 1</th>
-                <th>Brace Time 2</th>
-
-                <th>Medicimbal Score</th>
-                <th>Medicimbal Throw 1</th>
-                <th>Medicimbal Throw 2</th>
-                <th>Medicimbal Throw 3</th>
-
-                <th>Jet Score</th>
-                <th>Jet Laps</th>
-                <th>Jet Sides</th>
-                <th>Jet Distance</th>
-
-                <th>Triple Jump Score</th>
-                <th>Triple Jump Distance 1</th>
-                <th>Triple Jump Distance 2</th>
-                <th>Triple Jump Distance 3</th>
-
-                <th>Beep Test Score</th>
-                <th>Beep Test Level</th>
-                <th>Beep Test Laps</th>
-                <th>Beep Test Total Laps</th>
-
-                <th>Max HR</th>
-                <th>Year</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in results %}
-            <tr>
-                <td>{{ item.profile.surname }} {{ item.profile.name }}</td>
-                <td>{{ item.profile.gender }}</td>
-                <td>{{ item.profile.age }}</td>
-                <td>{{ item.profile.height }}</td>
-                <td>{{ item.profile.weight }}</td>
-
-                {% if item.test_result %}
-                <td>{{ item.test_result.ladder_score }}</td>
-                <td>{{ item.test_result.ladder_time_1 | default:"DNF" }}</td>
-                <td>{{ item.test_result.ladder_time_2 | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.hexagon_score }}</td>
-                <td>{{ item.test_result.hexagon_time_cw | default:"DNF" }}</td>
-                <td>{{ item.test_result.hexagon_time_ccw | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.y_test_score }}</td>
-                <td>{{ item.test_result.y_test_index | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ll_front | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ll_left | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ll_right | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_rl_front | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_rl_right | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_rl_left | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_la_left | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_la_front | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_la_back | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ra_right | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ra_front | default:"DNF" }}</td>
-                <td>{{ item.test_result.y_test_ra_back | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.brace_score }}</td>
-                <td>{{ item.test_result.brace_time_1 | default:"DNF" }}</td>
-                <td>{{ item.test_result.brace_time_2 | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.medicimbal_score }}</td>
-                <td>{{ item.test_result.medicimbal_throw_1 | default:"DNF" }}</td>
-                <td>{{ item.test_result.medicimbal_throw_2 | default:"DNF" }}</td>
-                <td>{{ item.test_result.medicimbal_throw_3 | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.jet_score }}</td>
-                <td>{{ item.test_result.jet_laps | default:"DNF" }}</td>
-                <td>{{ item.test_result.jet_sides | default:"DNF" }}</td>
-                <td>{{ item.test_result.jet_distance | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.triple_jump_score }}</td>
-                <td>{{ item.test_result.triple_jump_distance_1 | default:"DNF" }}</td>
-                <td>{{ item.test_result.triple_jump_distance_2 | default:"DNF" }}</td>
-                <td>{{ item.test_result.triple_jump_distance_3 | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.beep_test_score }}</td>
-                <td>{{ item.test_result.beep_test_level | default:"DNF" }}</td>
-                <td>{{ item.test_result.beep_test_laps | default:"DNF" }}</td>
-                <td>{{ item.test_result.beep_test_total_laps | default:"DNF" }}</td>
-
-                <td>{{ item.test_result.max_hr | default:"DNF" }}</td>
-                <td>{{ item.test_result.year }}</td>
-                {% else %}
-                <td colspan="41">No test results available</td>
-                {% endif %}
-            </tr>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="10">No results found.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endblock %}
+    <h2>Test Results</h2>
+    {% if messages %}
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    {% endif %}
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Surname & Name</th>
+                    <th>Gender</th>
+                    <th>Age</th>
+                    <th>Height</th>
+                    <th>Weight</th>
+                    <th>Ladder Score</th>
+                    <th>Ladder Time 1</th>
+                    <th>Ladder Time 2</th>
+                    <th>Hexagon Score</th>
+                    <th>Hexagon Time CW</th>
+                    <th>Hexagon Time CCW</th>
+                    <th>Y Balance Test Score</th>
+                    <th>Y Balance Test Index</th>
+                    <th>Y Left Leg Front</th>
+                    <th>Y Left Leg Left</th>
+                    <th>Y Left Leg Right</th>
+                    <th>Y Right Leg Front</th>
+                    <th>Y Right Leg Right</th>
+                    <th>Y Right Leg Left</th>
+                    <th>Y Left Arm Left</th>
+                    <th>Y Left Arm Front</th>
+                    <th>Y Left Arm Back</th>
+                    <th>Y Right Arm Right</th>
+                    <th>Y Right Arm Front</th>
+                    <th>Y Right Arm Back</th>
+                    <th>Brace Score</th>
+                    <th>Brace Time 1</th>
+                    <th>Brace Time 2</th>
+                    <th>Medicimbal Score</th>
+                    <th>Medicimbal Throw 1</th>
+                    <th>Medicimbal Throw 2</th>
+                    <th>Medicimbal Throw 3</th>
+                    <th>Jet Score</th>
+                    <th>Jet Laps</th>
+                    <th>Jet Sides</th>
+                    <th>Jet Distance</th>
+                    <th>Triple Jump Score</th>
+                    <th>Triple Jump Distance 1</th>
+                    <th>Triple Jump Distance 2</th>
+                    <th>Triple Jump Distance 3</th>
+                    <th>Beep Test Score</th>
+                    <th>Beep Test Level</th>
+                    <th>Beep Test Laps</th>
+                    <th>Beep Test Total Laps</th>
+                    <th>Max HR</th>
+                    <th>Year</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in results %}
+                    <tr>
+                        <td>{{ item.profile.surname }} {{ item.profile.name }}</td>
+                        <td>{{ item.profile.gender }}</td>
+                        <td>{{ item.profile.age }}</td>
+                        <td>{{ item.profile.height }}</td>
+                        <td>{{ item.profile.weight }}</td>
+                        {% if item.test_result %}
+                            <td>{{ item.test_result.ladder_score }}</td>
+                            <td>{{ item.test_result.ladder_time_1 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.ladder_time_2 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.hexagon_score }}</td>
+                            <td>{{ item.test_result.hexagon_time_cw | default:"DNF" }}</td>
+                            <td>{{ item.test_result.hexagon_time_ccw | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_score }}</td>
+                            <td>{{ item.test_result.y_test_index | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ll_front | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ll_left | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ll_right | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_rl_front | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_rl_right | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_rl_left | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_la_left | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_la_front | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_la_back | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ra_right | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ra_front | default:"DNF" }}</td>
+                            <td>{{ item.test_result.y_test_ra_back | default:"DNF" }}</td>
+                            <td>{{ item.test_result.brace_score }}</td>
+                            <td>{{ item.test_result.brace_time_1 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.brace_time_2 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.medicimbal_score }}</td>
+                            <td>{{ item.test_result.medicimbal_throw_1 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.medicimbal_throw_2 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.medicimbal_throw_3 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.jet_score }}</td>
+                            <td>{{ item.test_result.jet_laps | default:"DNF" }}</td>
+                            <td>{{ item.test_result.jet_sides | default:"DNF" }}</td>
+                            <td>{{ item.test_result.jet_distance | default:"DNF" }}</td>
+                            <td>{{ item.test_result.triple_jump_score }}</td>
+                            <td>{{ item.test_result.triple_jump_distance_1 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.triple_jump_distance_2 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.triple_jump_distance_3 | default:"DNF" }}</td>
+                            <td>{{ item.test_result.beep_test_score }}</td>
+                            <td>{{ item.test_result.beep_test_level | default:"DNF" }}</td>
+                            <td>{{ item.test_result.beep_test_laps | default:"DNF" }}</td>
+                            <td>{{ item.test_result.beep_test_total_laps | default:"DNF" }}</td>
+                            <td>{{ item.test_result.max_hr | default:"DNF" }}</td>
+                            <td>{{ item.test_result.year }}</td>
+                        {% else %}
+                            <td colspan="41">No test results available</td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="10">No results found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}

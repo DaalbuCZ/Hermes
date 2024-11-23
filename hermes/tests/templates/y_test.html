@@ -1,37 +1,38 @@
-{% extends 'base.html' %} {% load unicorn %} {% load static %} {% block title %}Y Test{% endblock %} {% block extra_css %}
-<link
-  href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
-  rel="stylesheet"
-/>
-<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
-<link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
-{% endblock %} {% block content %} {% unicorn_scripts %}
-<h2>Y Test</h2>
-
-<div class="container">
-  <div class="profile-selector">
-    <label for="profile_search">Select Profile:</label>
-    <input
-      type="text"
-      id="profile_search"
-      placeholder="Search profiles..."
-      autocomplete="off"
-    />
-    <ul id="profile_list" class="dropdown-content">
-      {% for profile in profiles %}
-      <li data-value="{{ profile.id }}">
-        {{ profile.surname }} {{ profile.name }}
-      </li>
-      {% endfor %}
-    </ul>
+{% extends "base.html" %}
+{% load unicorn %}
+{% load static %}
+{% block title %}
+  Y Test
+{% endblock title %}
+{% block extra_css %}
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
+        rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  <link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
+{% endblock extra_css %}
+{% block content %}
+  {% unicorn_scripts %}
+  <h2>Y Test</h2>
+  <div class="container">
+    <div class="profile-selector">
+      <label for="profile_search">Select Profile:</label>
+      <input type="text"
+             id="profile_search"
+             placeholder="Search profiles..."
+             autocomplete="off" />
+      <ul id="profile_list" class="dropdown-content">
+        {% for profile in profiles %}
+          <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% unicorn 'y-test-score' %}
   </div>
-
-  {% unicorn 'y-test-score' %}
-</div>
-{% endblock %} {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-<script>
+{% endblock content %}
+{% block extra_js %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+  <script>
   $(document).ready(function () {
     $("#profile_search").on("keyup focus", function () {
       var value = $(this).val().toLowerCase();
@@ -60,5 +61,5 @@
       }
     });
   });
-</script>
-{% endblock %}
+  </script>
+{% endblock extra_js %}

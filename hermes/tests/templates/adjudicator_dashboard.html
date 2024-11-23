@@ -1,18 +1,31 @@
-{% extends 'base.html' %}
-{% block title %}Adjudicator Dashboard - HERMES{% endblock %}
+{% extends "base.html" %}
+{% block title %}
+   Adjudicator Dashboard - HERMES
+{% endblock title %}
 {% block content %}
-<h2>Adjudicator Dashboard</h2>
-<div class="list-group">
-  <a href="{% url 'ladder_test' %}" class="list-group-item list-group-item-action">Ladder Test</a>
-  <a href="{% url 'brace_test' %}" class="list-group-item list-group-item-action">Brace Test</a>
-  <a href="{% url 'hexagon_test' %}" class="list-group-item list-group-item-action">Hexagon Test</a>
-  <a href="{% url 'medicimbal_test' %}" class="list-group-item list-group-item-action">Medicimbal Test</a>
-  <a href="{% url 'y_test' %}" class="list-group-item list-group-item-action">Y Test</a>
-  <a href="{% url 'triple_jump_test' %}" class="list-group-item list-group-item-action">Triple Jump Test</a>
-  <a href="{% url 'jet_test' %}" class="list-group-item list-group-item-action">Jet Test</a>
-  <a href="{% url 'beep_test' %}" class="list-group-item list-group-item-action">Beep Test</a>
-  <a href="{% url 'add_profile' %}" class="list-group-item list-group-item-action">Add Profile</a>
-  <a href="{% url 'profile_list' %}" class="list-group-item list-group-item-action">Profile List</a>
-  <a href="{% url 'results' %}" class="list-group-item list-group-item-action">Results</a>
-</div>
-{% endblock %}
+   <h2>Adjudicator Dashboard</h2>
+   <div class="list-group">
+      <a href="{% url 'ladder_test' %}"
+         class="list-group-item list-group-item-action">Ladder Test</a>
+      <a href="{% url 'brace_test' %}"
+         class="list-group-item list-group-item-action">Brace Test</a>
+      <a href="{% url 'hexagon_test' %}"
+         class="list-group-item list-group-item-action">Hexagon Test</a>
+      <a href="{% url 'medicimbal_test' %}"
+         class="list-group-item list-group-item-action">Medicimbal Test</a>
+      <a href="{% url 'y_test' %}"
+         class="list-group-item list-group-item-action">Y Test</a>
+      <a href="{% url 'triple_jump_test' %}"
+         class="list-group-item list-group-item-action">Triple Jump Test</a>
+      <a href="{% url 'jet_test' %}"
+         class="list-group-item list-group-item-action">Jet Test</a>
+      <a href="{% url 'beep_test' %}"
+         class="list-group-item list-group-item-action">Beep Test</a>
+      <a href="{% url 'add_profile' %}"
+         class="list-group-item list-group-item-action">Add Profile</a>
+      <a href="{% url 'profile_list' %}"
+         class="list-group-item list-group-item-action">Profile List</a>
+      <a href="{% url 'results' %}"
+         class="list-group-item list-group-item-action">Results</a>
+   </div>
+{% endblock content %}
