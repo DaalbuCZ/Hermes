@@ -69,7 +69,6 @@ def radar_factory(num_vars, frame="circle"):
                 offset = 1
                 y += offset
 
-                print(x, y)
                 self.text(x, y, str(int(radius)), rotation=45)
 
             return gridlines, []
@@ -92,7 +91,36 @@ def radar_factory(num_vars, frame="circle"):
                 line.set_data(x, y)
 
         def set_varlabels(self, labels):
-            self.set_thetagrids(np.degrees(theta), labels)
+            # Get the default theta locations
+            angles = np.degrees(theta)
+
+            # Remove any existing theta labels
+            self.set_thetagrids([], [])
+
+            for angle, label in zip(angles, labels):
+
+                angle_rad = np.radians(angle)
+
+                pad = 21.5
+                x = angle_rad
+                y = pad
+
+                if angle > 45 and angle < 135:
+                    ha = "right"
+                elif angle > 225 and angle < 315:
+                    ha = "left"
+                else:
+                    ha = "center"
+
+                self.text(
+                    x,
+                    y,
+                    label,
+                    rotation=0,
+                    transform=self.transData,
+                    ha=ha,
+                    va="center",
+                )
 
         def _gen_axes_patch(self):
             # The Axes patch must be centered at (0.5, 0.5) and of radius 0.5
@@ -130,7 +158,7 @@ def radar_factory(num_vars, frame="circle"):
 
 def example_data():
     data = [
-        [
+        [  # TODO: this is counterclockwise
             "Strength",
             "Speed",
             "Endurance",
@@ -139,7 +167,7 @@ def example_data():
         (
             "tst",
             [
-                [20, 14, 5, 13],
+                [20, 15, 10, 5],
                 [12, 3, 6, 17],
                 [13, 6, 7, 10],
             ],
