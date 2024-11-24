@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from .radarplot_generator import generate_radar_plot_from_scores
 from .models import TestResult, Profile
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .score_tables import (
@@ -521,7 +522,32 @@ def adjudicator_dashboard(request):
 
 
 def recalculate_scores_view(request):
-    return recalculate_scores(request)
+    # First recalculate all scores
+    recalculate_scores(request)
+    
+    # Get all test results for display
+    test_results = TestResult.objects.all().order_by('profile__surname')
+    
+    return render(request, 'recalculate_scores.html', {'test_results': test_results})
+
+
+def download_radar_plot(request, profile_id):
+    test_result = get_object_or_404(TestResult, profile_id=profile_id)
+    
+    # Generate radar plot
+    plot_buffer = generate_radar_plot_from_scores(
+        test_result.speed_score or 0,
+        test_result.endurance_score or 0,
+        test_result.agility_score or 0,
+        test_result.strength_score or 0
+    )
+    
+    # Create response
+    response = HttpResponse(content_type='image/png')
+    response['Content-Disposition'] = f'attachment; filename="radar_plot_{profile_id}.png"'
+    response.write(plot_buffer.getvalue())
+    
+    return response
 
 
 def get_profile_data(request):

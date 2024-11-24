@@ -163,9 +163,41 @@ def recalculate_scores(request):
                 age, gender, "triple_jump", jump_1, jump_2, jump_3
             )
 
-        # Save the updated test result
+        # Calculate composite scores
+        # Strength score
+        if (
+            test_result.medicimbal_score is not None
+            and test_result.triple_jump_score is not None
+        ):
+            test_result.strength_score = (
+                test_result.medicimbal_score + test_result.triple_jump_score
+            ) / 2
+
+        # Speed score
+        if (
+            test_result.ladder_score is not None
+            and test_result.hexagon_score is not None
+        ):
+            test_result.speed_score = (
+                test_result.ladder_score + test_result.hexagon_score
+            ) / 2
+
+        # Endurance score
+        if (
+            test_result.beep_test_score is not None
+            and test_result.jet_score is not None
+        ):
+            test_result.endurance_score = (
+                test_result.beep_test_score + test_result.jet_score
+            ) / 2
+
+        # Agility score
+        if test_result.brace_score is not None and test_result.y_test_score is not None:
+            test_result.agility_score = (
+                test_result.brace_score + test_result.y_test_score
+            ) / 2
+
         test_result.save()
 
     messages.success(request, "Scores recalculated successfully!")
     return redirect("results")
-

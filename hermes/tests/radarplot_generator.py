@@ -1,3 +1,6 @@
+import matplotlib
+
+matplotlib.use("Agg")  # Must be before importing pyplot
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -156,52 +159,108 @@ def radar_factory(num_vars, frame="circle"):
     return theta
 
 
-def example_data():
+def generate_radar_plot_from_scores(speed, endurance, agility, strength):
+    """
+    Generate a radar plot from athlete test scores.
+
+    Parameters
+    ----------
+    speed : float
+        Speed score (0-20)
+    endurance : float
+        Endurance score (0-20)
+    agility : float
+        Agility score (0-20)
+    strength : float
+        Strength score (0-20)
+
+    Returns
+    -------
+    BytesIO
+        Buffer containing the PNG image of the radar plot
+    """
+    theta = radar_factory(4, frame="polygon")
+
+    # Create data structure
     data = [
-        [  # TODO: this is counterclockwise
-            "Strength",
-            "Speed",
-            "Endurance",
-            "Mobility",
-        ],
-        (
-            "tst",
-            [
-                [20, 15, 10, 5],
-                [12, 3, 6, 17],
-                [13, 6, 7, 10],
-            ],
-        ),
+        ["Speed", "Endurance", "Agility", "Strength"],
+        ("Scores", [[speed, endurance, agility, strength]]),
     ]
-    return data
+
+    # Create plot
+    fig, ax = plt.subplots(figsize=(7, 6), subplot_kw=dict(projection="radar"))
+    fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+
+    spoke_labels = data.pop(0)
+    ax.set_ylim(0, 20)
+    ax.set_rgrids([5, 10, 15, 20])
+    ax.set_varlabels(spoke_labels)
+
+    case_data = data[0]
+    all_data = np.array(case_data[1])
+
+    # Plot data
+    ax.plot(theta, all_data[0], color="b", label="Current Scores")
+    ax.fill(theta, all_data[0], color="b", alpha=0.25)
+
+    ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
+
+    # Save to bytes buffer
+    from io import BytesIO
+
+    buf = BytesIO()
+    plt.savefig(buf, format="png")
+    plt.close()
+    buf.seek(0)
+    return buf
 
 
-theta = radar_factory(4, frame="polygon")
+# def example_data():
+#     data = [
+#         [  # FIXME: this is counterclockwise
+#             "Strength",
+#             "Speed",
+#             "Endurance",
+#             "Mobility",
+#         ],
+#         (
+#             "tst",
+#             [
+#                 [20, 15, 10, 5],
+#                 [12, 3, 6, 17],
+#                 [13, 6, 7, 10],
+#             ],
+#         ),
+#     ]
+#     return data
 
-data = example_data()
-spoke_labels = data.pop(0)
 
-fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection="radar"))
-fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+# theta = radar_factory(4, frame="polygon")
 
-ax.set_ylim(0, 20)
-ax.set_rgrids([5, 10, 15, 20])
+# data = example_data()
+# spoke_labels = data.pop(0)
+
+# fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection="radar"))
+# fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+
+# ax.set_ylim(0, 20)
+# ax.set_rgrids([5, 10, 15, 20])
 
 
-ax.set_varlabels(spoke_labels)
+# ax.set_varlabels(spoke_labels)
 
 
-case_data = data[0]
-case_name = case_data[0]
-all_data = np.array(case_data[1])
+# case_data = data[0]
+# case_name = case_data[0]
+# all_data = np.array(case_data[1])
 
-colors = ["b", "r", "g"]
-labels = ["Line 1", "Line 2", "Line 3"]
+# colors = ["b", "r", "g"]
+# labels = ["Line 1", "Line 2", "Line 3"]
 
-for d, color, label in zip(all_data, colors, labels):
-    ax.plot(theta, d, color=color, label=label)
-    ax.fill(theta, d, color=color, alpha=0.25)
+# for d, color, label in zip(all_data, colors, labels):
+#     ax.plot(theta, d, color=color, label=label)
+#     ax.fill(theta, d, color=color, alpha=0.25)
 
-ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
+# ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
 
-plt.show()
+# plt.show()

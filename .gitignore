@@ -10,3 +10,4 @@
 *.env
 /hermes/tests/components/__pycache__
 /Olymp.code-workspace
+/hermes/tests/migrations/__pycache__

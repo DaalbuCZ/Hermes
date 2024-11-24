@@ -24,6 +24,11 @@ urlpatterns = [
         views.recalculate_scores_view,
         name="recalculate_scores",
     ),
+    path(
+        "download_radar_plot/<int:profile_id>/",
+        views.download_radar_plot,
+        name="download_radar_plot",
+    ),
     path("edit_profile/<int:profile_id>/", views.edit_profile, name="edit_profile"),
     path("get_profile_data/", views.get_profile_data, name="get_profile_data"),
 ]

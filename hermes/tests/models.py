@@ -111,6 +111,7 @@ class Profile(models.Model):
 
 class TestResult(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    test_date = models.DateField(auto_now_add=True)
 
     ladder_score = models.IntegerField(default=0)
     ladder_time_1 = models.FloatField(null=True, blank=True)
@@ -160,8 +161,29 @@ class TestResult(models.Model):
     beep_test_total_laps = models.IntegerField(null=True, blank=True)
     max_hr = models.IntegerField(null=True, blank=True)
 
+    strength_score = models.FloatField(null=True, blank=True)
+    # medicimbal_score + triple_jump_score /2
+    speed_score = models.FloatField(null=True, blank=True)
+    # ladder_score + hexagon_score /2
+    endurance_score = models.FloatField(null=True, blank=True)
+    # beep_test_score + jet_score /2
+    agility_score = models.FloatField(null=True, blank=True)
+    # brace_score + y_test_score /2
+
     def __str__(self):
         return f"{self.profile.surname} {self.profile.name} - {self._meta.model_name}"
+
+    def save(self, *args, **kwargs):
+        # Calculate composite scores before saving
+        if self.medicimbal_score is not None and self.triple_jump_score is not None:
+            self.strength_score = (self.medicimbal_score + self.triple_jump_score) / 2
+        if self.ladder_score is not None and self.hexagon_score is not None:
+            self.speed_score = (self.ladder_score + self.hexagon_score) / 2
+        if self.beep_test_score is not None and self.jet_score is not None:
+            self.endurance_score = (self.beep_test_score + self.jet_score) / 2
+        if self.brace_score is not None and self.y_test_score is not None:
+            self.agility_score = (self.brace_score + self.y_test_score) / 2
+        super().save(*args, **kwargs)
 
 
 def save(self, *args, **kwargs):
