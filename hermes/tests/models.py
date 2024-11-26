@@ -104,6 +104,13 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.surname} {self.name}"
 
+    def get_latest_test_result(self):
+        return TestResult.objects.filter(profile=self).order_by("-test_date").first()
+
+    def get_last_three_test_results(self):
+        """Get the last three test results for the profile, ordered by most recent first."""
+        return TestResult.objects.filter(profile=self).order_by("-test_date")[:3]
+
     @property
     def full_name(self):
         return f"{self.surname} {self.name}"
@@ -184,7 +191,3 @@ class TestResult(models.Model):
         if self.brace_score is not None and self.y_test_score is not None:
             self.agility_score = (self.brace_score + self.y_test_score) / 2
         super().save(*args, **kwargs)
-
-
-def save(self, *args, **kwargs):
-    super().save(*args, **kwargs)

@@ -34,34 +34,34 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
   <script>
-  $(document).ready(function () {
-    $("#profile_search").on("keyup focus", function () {
-      var value = $(this).val().toLowerCase();
-      $("#profile_list li").filter(function () {
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+    $(document).ready(function () {
+      $("#profile_search").on("keyup focus", function () {
+        var value = $(this).val().toLowerCase();
+        $("#profile_list li").filter(function () {
+          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+        $("#profile_list").show();
       });
-      $("#profile_list").show();
-    });
-
-    $("#profile_list li").on("click", function () {
-      var selectedText = $(this).text();
-      var selectedValue = $(this).data("value");
-      $("#profile_search").val(selectedText);
-      $("#profile_id").val(selectedValue);
-      $("#profile_list").hide();
-
-      try {
-        Unicorn.call("ladder-score", "update_profile", selectedValue);
-      } catch (error) {
-        console.error("Error updating profile in Unicorn component:", error);
-      }
-    });
-
-    $(document).on("click", function (e) {
-      if (!$(e.target).closest("#profile_search, #profile_list").length) {
+  
+      $("#profile_list li").on("click", function () {
+        var selectedText = $(this).text();
+        var selectedValue = $(this).data("value");
+        $("#profile_search").val(selectedText);
+        $("#profile_id").val(selectedValue);
         $("#profile_list").hide();
-      }
+  
+        try {
+          Unicorn.call("ladder-score", "update_profile", selectedValue);
+        } catch (error) {
+          console.error("Error updating profile in Unicorn component:", error);
+        }
+      });
+  
+      $(document).on("click", function (e) {
+        if (!$(e.target).closest("#profile_search, #profile_list").length) {
+          $("#profile_list").hide();
+        }
+      });
     });
-  });
   </script>
 {% endblock extra_js %}

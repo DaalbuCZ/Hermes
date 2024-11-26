@@ -1,5 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from io import BytesIO
 from .radarplot_generator import generate_radar_plot_from_scores
+from .pdf_report_generator import generate_test_results_pdf
+from reportlab.platypus import PageBreak
 from .models import TestResult, Profile
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .score_tables import (
@@ -524,29 +527,31 @@ def adjudicator_dashboard(request):
 def recalculate_scores_view(request):
     # First recalculate all scores
     recalculate_scores(request)
-    
+
     # Get all test results for display
-    test_results = TestResult.objects.all().order_by('profile__surname')
-    
-    return render(request, 'recalculate_scores.html', {'test_results': test_results})
+    test_results = TestResult.objects.all().order_by("profile__surname")
+
+    return render(request, "recalculate_scores.html", {"test_results": test_results})
 
 
 def download_radar_plot(request, profile_id):
     test_result = get_object_or_404(TestResult, profile_id=profile_id)
-    
+
     # Generate radar plot
     plot_buffer = generate_radar_plot_from_scores(
         test_result.speed_score or 0,
         test_result.endurance_score or 0,
         test_result.agility_score or 0,
-        test_result.strength_score or 0
+        test_result.strength_score or 0,
     )
-    
+
     # Create response
-    response = HttpResponse(content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename="radar_plot_{profile_id}.png"'
+    response = HttpResponse(content_type="image/png")
+    response["Content-Disposition"] = (
+        f'attachment; filename="radar_plot_{profile_id}.png"'
+    )
     response.write(plot_buffer.getvalue())
-    
+
     return response
 
 
@@ -560,3 +565,43 @@ def get_profile_data(request):
         # Include other fields as needed
     }
     return JsonResponse(data)
+
+
+def download_pdf_report(request, profile_id):
+    test_result = get_object_or_404(TestResult, profile_id=profile_id)
+
+    # Create a BytesIO buffer to receive PDF data
+    buffer = BytesIO()
+
+    # Generate the PDF
+    generate_test_results_pdf(test_result, buffer)
+
+    # Create the HTTP response with PDF mime type
+    buffer.seek(0)
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = (
+        f'attachment; filename="test_results_{profile_id}.pdf"'
+    )
+    response.write(buffer.getvalue())
+
+    return response
+
+
+def download_all_pdf_reports(request):
+    """Download a combined PDF containing all test results."""
+    # Get all test results ordered by surname
+    test_results = TestResult.objects.all().order_by('profile__surname')
+    
+    # Create a BytesIO buffer to receive PDF data
+    buffer = BytesIO()
+    
+    # Generate the PDF with all results
+    generate_test_results_pdf(list(test_results), buffer)
+    
+    # Create the HTTP response with PDF mime type
+    buffer.seek(0)
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="all_test_results.pdf"'
+    response.write(buffer.getvalue())
+    
+    return response

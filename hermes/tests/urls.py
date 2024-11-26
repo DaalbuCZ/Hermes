@@ -31,4 +31,14 @@ urlpatterns = [
     ),
     path("edit_profile/<int:profile_id>/", views.edit_profile, name="edit_profile"),
     path("get_profile_data/", views.get_profile_data, name="get_profile_data"),
+    path(
+        "download-pdf/<int:profile_id>/",
+        views.download_pdf_report,
+        name="download_pdf_report",
+    ),
+    path(
+        "download-all-pdf/",
+        views.download_all_pdf_reports,
+        name="download_all_pdf_reports",
+    ),
 ]

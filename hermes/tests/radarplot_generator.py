@@ -159,7 +159,9 @@ def radar_factory(num_vars, frame="circle"):
     return theta
 
 
-def generate_radar_plot_from_scores(speed, endurance, agility, strength):
+def generate_radar_plot_from_scores(
+    speed, endurance, agility, strength, historical_results=None
+):
     """
     Generate a radar plot from athlete test scores.
 
@@ -173,6 +175,8 @@ def generate_radar_plot_from_scores(speed, endurance, agility, strength):
         Agility score (0-20)
     strength : float
         Strength score (0-20)
+    historical_results : list of dict, optional
+        List of historical results, each containing speed, endurance, agility, and strength scores
 
     Returns
     -------
@@ -181,27 +185,40 @@ def generate_radar_plot_from_scores(speed, endurance, agility, strength):
     """
     theta = radar_factory(4, frame="polygon")
 
-    # Create data structure
-    data = [
-        ["Speed", "Endurance", "Agility", "Strength"],
-        ("Scores", [[speed, endurance, agility, strength]]),
-    ]
-
     # Create plot
     fig, ax = plt.subplots(figsize=(7, 6), subplot_kw=dict(projection="radar"))
     fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
 
-    spoke_labels = data.pop(0)
+    spoke_labels = ["Speed", "Endurance", "Agility", "Strength"]
     ax.set_ylim(0, 20)
     ax.set_rgrids([5, 10, 15, 20])
     ax.set_varlabels(spoke_labels)
 
-    case_data = data[0]
-    all_data = np.array(case_data[1])
+    # Plot current data
+    current_data = [speed, endurance, agility, strength]
+    ax.plot(theta, current_data, color="b", label="Current", linewidth=2)
+    ax.fill(theta, current_data, color="b", alpha=0.25)
 
-    # Plot data
-    ax.plot(theta, all_data[0], color="b", label="Current Scores")
-    ax.fill(theta, all_data[0], color="b", alpha=0.25)
+    # Plot historical data if provided
+    if historical_results:
+        colors = ["r", "g"]  # Colors for historical results
+        for idx, result in enumerate(historical_results):
+            historical_data = [
+                result.speed_score,
+                result.endurance_score,
+                result.agility_score,
+                result.strength_score,
+            ]
+            date_str = result.test_date.strftime("%Y-%m-%d")
+            ax.plot(
+                theta,
+                historical_data,
+                color=colors[idx],
+                label=f"Previous ({date_str})",
+                linestyle="--",
+                alpha=0.7,
+            )
+            ax.fill(theta, historical_data, color=colors[idx], alpha=0.1)
 
     ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
 
@@ -209,7 +226,7 @@ def generate_radar_plot_from_scores(speed, endurance, agility, strength):
     from io import BytesIO
 
     buf = BytesIO()
-    plt.savefig(buf, format="png")
+    plt.savefig(buf, format="png", dpi=300)
     plt.close()
     buf.seek(0)
     return buf
