@@ -10,7 +10,6 @@
                    unicorn:model="time_cw"
                    unicorn:change="calculate_hexagon_score"
                    value="{{ time_cw }}">
-            {% if errors.time_cw %}<div class="error-message">{{ errors.time_cw }}</div>{% endif %}
         </div>
         <div class="input-group">
             <label>Hexagon Time Counter-Clockwise:</label>
@@ -21,7 +20,6 @@
                    unicorn:model="time_ccw"
                    unicorn:change="calculate_hexagon_score"
                    value="{{ time_ccw }}">
-            {% if errors.time_ccw %}<div class="error-message">{{ errors.time_ccw }}</div>{% endif %}
         </div>
         <div class="score-display">Clockwise Score: {{ score_cw }}</div>
         <div class="score-display">Counter-Clockwise Score: {{ score_ccw }}</div>

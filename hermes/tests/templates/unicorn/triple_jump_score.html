@@ -9,7 +9,6 @@
                    unicorn:model="distance_1"
                    unicorn:change="calculate_triple_jump_score"
                    value="{{ distance_1 }}">
-            {% if errors.distance_1 %}<div class="error-message">{{ errors.distance_1 }}</div>{% endif %}
         </div>
         <div class="input-group">
             <label>Triple Jump Distance 2 (meters):</label>
@@ -20,7 +19,6 @@
                    unicorn:model="distance_2"
                    unicorn:change="calculate_triple_jump_score"
                    value="{{ distance_2 }}">
-            {% if errors.distance_2 %}<div class="error-message">{{ errors.distance_2 }}</div>{% endif %}
         </div>
         <div class="input-group">
             <label>Triple Jump Distance 3 (meters):</label>
@@ -31,12 +29,10 @@
                    unicorn:model="distance_3"
                    unicorn:change="calculate_triple_jump_score"
                    value="{{ distance_3 }}">
-            {% if errors.distance_3 %}<div class="error-message">{{ errors.distance_3 }}</div>{% endif %}
         </div>
         <div class="score-display">Distance 1 Score: {{ score_1 }}</div>
         <div class="score-display">Distance 2 Score: {{ score_2 }}</div>
         <div class="score-display">Distance 3 Score: {{ score_3 }}</div>
-        {% if errors.general %}<div class="error-message">{{ errors.general }}</div>{% endif %}
         <button type="submit"
                 class="submit-button"
                 {% if not profile_id %}disabled{% endif %}>Save Results</button>

@@ -1,31 +1,29 @@
 <div>
-	<form class="calculator-form" unicorn:submit="save_results">
-		<div class="input-group">
-			<label>Brace Time 1:</label>
-			<input type="number"
-				   step="0.01"
-				   min="0"
-				   name="brace_time_1"
-				   unicorn:model="time_1"
-				   unicorn:change="calculate_brace_score"
-				   value="{{ time_1 }}">
-			{% if errors.time_1 %}<div class="error-message">{{ errors.time_1 }}</div>{% endif %}
-		</div>
-		<div class="input-group">
-			<label>Brace Time 2:</label>
-			<input type="number"
-				   step="0.01"
-				   min="0"
-				   name="brace_time_2"
-				   unicorn:model="time_2"
-				   unicorn:change="calculate_brace_score"
-				   value="{{ time_2 }}">
-			{% if errors.time_2 %}<div class="error-message">{{ errors.time_2 }}</div>{% endif %}
-		</div>
-		<div class="score-display">Time 1 Score: {{ score_1 }}</div>
-		<div class="score-display">Time 2 Score: {{ score_2 }}</div>
-		<button type="submit"
-				class="submit-button"
-				{% if not profile_id %}disabled{% endif %}>Save Results</button>
-	</form>
+    <form class="calculator-form" unicorn:submit="save_results">
+        <div class="input-group">
+            <label>Brace Time 1:</label>
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="brace_time_1"
+                   unicorn:model="time_1"
+                   unicorn:change="calculate_brace_score"
+                   value="{{ time_1 }}">
+        </div>
+        <div class="input-group">
+            <label>Brace Time 2:</label>
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="brace_time_2"
+                   unicorn:model="time_2"
+                   unicorn:change="calculate_brace_score"
+                   value="{{ time_2 }}">
+        </div>
+        <div class="score-display">Time 1 Score: {{ score_1 }}</div>
+        <div class="score-display">Time 2 Score: {{ score_2 }}</div>
+        <button type="submit"
+                class="submit-button"
+                {% if not profile_id %}disabled{% endif %}>Save Results</button>
+    </form>
 </div>
