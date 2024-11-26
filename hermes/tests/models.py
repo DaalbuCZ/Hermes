@@ -2,6 +2,29 @@ from django.db import models
 from datetime import date
 
 
+class Team(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    admins = models.ManyToManyField("auth.User", related_name="teams")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class ActiveTest(models.Model):
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, related_name="created_tests"
+    )
+
+    def __str__(self):
+        return f"{self.name} ({'Active' if self.is_active else 'Inactive'})"
+
+
 class Profile(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
@@ -117,8 +140,17 @@ class Profile(models.Model):
 
 
 class TestResult(models.Model):
+    id = models.AutoField(primary_key=True)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     test_date = models.DateField(auto_now_add=True)
+    active_test = models.ForeignKey(
+        ActiveTest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="test_results",
+    )
 
     ladder_score = models.IntegerField(default=0)
     ladder_time_1 = models.FloatField(null=True, blank=True)

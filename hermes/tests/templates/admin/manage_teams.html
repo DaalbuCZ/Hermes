@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+	<div class="container">
+		<h2>Manage Teams</h2>
+		<!-- Add new team form -->
+		<div class="add-team-form">
+			<h3>Add New Team</h3>
+			<form method="post">
+				{% csrf_token %}
+				<input type="text" name="team_name" required placeholder="Team name">
+				<textarea name="team_description" placeholder="Team description"></textarea>
+				<select name="admin_id" required>
+					<option value="">Select Foreign Admin</option>
+					{% for admin in foreign_admins %}
+						<option value="{{ admin.id }}">{{ admin.username }}</option>
+					{% endfor %}
+				</select>
+				<input type="hidden" name="action" value="add_team">
+				<button type="submit">Add Team</button>
+			</form>
+		</div>
+
+		<!-- List of teams -->
+		<div class="teams-list">
+			<h3>Available Teams</h3>
+			<table>
+				<thead>
+					<tr>
+						<th>Team Name</th>
+						<th>Description</th>
+						<th>Foreign Admin</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for team in teams %}
+						<tr>
+							<td>{{ team.name }}</td>
+							<td>{{ team.description }}</td>
+							<td>{{ team.admin.username }}</td>
+							<td>
+								<form method="post" class="inline-form">
+									{% csrf_token %}
+									<input type="hidden" name="team_id" value="{{ team.id }}">
+									<input type="hidden" name="action" value="delete_team">
+									<button type="submit" onclick="return confirm('Are you sure you want to delete this team?')">Delete</button>
+								</form>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock content %}

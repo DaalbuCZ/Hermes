@@ -24,4 +24,5 @@ urlpatterns = [
     path("tests/", include("tests.urls")),
     path("", views.index, name="index"),
     path("unicorn/", include("django_unicorn.urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
 ]

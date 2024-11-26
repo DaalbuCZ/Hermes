@@ -4,6 +4,11 @@
 {% endblock title %}
 {% block content %}
    <h2>Adjudicator Dashboard</h2>
+   {% if active_test %}
+      <div class="alert alert-info">
+         Current Active Test: {{ active_test.name }} (Team: {{ active_test.team.name|default:"No Team" }})
+      </div>
+   {% endif %}
    <div class="list-group">
       <a href="{% url 'ladder_test' %}"
          class="list-group-item list-group-item-action">Ladder Test</a>
@@ -29,5 +34,13 @@
          class="list-group-item list-group-item-action">Results</a>
       <a href="{% url 'recalculate_scores' %}"
          class="list-group-item list-group-item-action">Recalculate Scores</a>
+      {% if user.is_superuser %}
+         <a href="{% url 'manage_teams' %}"
+            class="list-group-item list-group-item-action">Manage Teams</a>
+      {% endif %}
+      {% if user.groups.all.0.name == 'Foreign Admin' or user.is_superuser %}
+         <a href="{% url 'manage_active_tests' %}"
+            class="list-group-item list-group-item-action">Manage Active Tests</a>
+      {% endif %}
    </div>
 {% endblock content %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <h2>Manage Active Tests</h2>
+        <!-- Add new test form -->
+        <div class="add-test-form">
+            <h3>Add New Test</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="text" name="test_name" required placeholder="Test name">
+                <select name="team_id" required>
+                    <option value="">Select Team</option>
+                    {% for team in teams %}<option value="{{ team.id }}">{{ team.name }}</option>{% endfor %}
+                </select>
+                <input type="hidden" name="action" value="add">
+                <button type="submit">Add Test</button>
+            </form>
+        </div>
+        <!-- List of tests -->
+        <div class="tests-list">
+            <h3>Available Tests</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Team</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Created By</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in active_tests %}
+                        <tr>
+                            <td>{{ test.name }}</td>
+                            <td>{{ test.team.name|default:"No Team" }}</td>
+                            <td>
+                                {% if test.is_active %}
+                                    Active
+                                {% else %}
+                                    Inactive
+                                {% endif %}
+                            </td>
+                            <td>{{ test.created_at }}</td>
+                            <td>{{ test.created_by.username }}</td>
+                            <td>
+                                {% if not test.is_active %}
+                                    <form method="post" class="inline-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="test_id" value="{{ test.id }}">
+                                        <input type="hidden" name="action" value="activate">
+                                        <button type="submit">Make Active</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

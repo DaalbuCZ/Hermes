@@ -3,13 +3,13 @@
 {% load static %}
 {% block title %}
   Jet Test
-{% endblock t %}
+{% endblock title %}
 {% block extra_css %}
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
         rel="stylesheet" />
   <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
   <link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
-{% endblockitle extra_css %}
+{% endblock extra_css %}
 {% block content %}
   {% unicorn_scripts %}
   <h2>Jet Test</h2>

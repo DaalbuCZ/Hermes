@@ -1,5 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required, user_passes_test
 from io import BytesIO
+from .models import ActiveTest, Team
+from django.contrib.auth.models import User
 from .radarplot_generator import generate_radar_plot_from_scores
 from .pdf_report_generator import generate_test_results_pdf
 from reportlab.platypus import PageBreak
@@ -25,10 +29,28 @@ from .recalculate_scores import recalculate_scores
 from django.http import JsonResponse
 
 
+def is_foreign_admin(user):
+    return user.is_superuser or user.groups.filter(name="Foreign Admin").exists()
+
+
+def is_admin(user):
+    return user.is_superuser
+
+
+def is_adjudicator(user):
+    return (
+        user.groups.filter(name="Adjudicators").exists()
+        or user.is_superuser
+        or user.groups.filter(name="Foreign Admin").exists()
+    )
+
+
 def get_selected_db(request):
     return request.session.get("selected_db", "default")
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def test_results(request):
     profiles = Profile.objects.all().order_by("surname")
 
@@ -57,6 +79,8 @@ def index(request):
 
 # @login_required
 # @user_passes_test(is_adjudicator)
+@login_required
+@user_passes_test(is_adjudicator)
 def add_profile(request):
     if request.method == "POST":
         form = CustomProfileCreationForm(request.POST)
@@ -71,6 +95,8 @@ def add_profile(request):
     return render(request, "add_profile.html", {"form": form})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def edit_profile(request, profile_id):
     profile = get_object_or_404(Profile, id=profile_id)
     if request.method == "POST":
@@ -83,16 +109,21 @@ def edit_profile(request, profile_id):
     return render(request, "edit_profile.html", {"form": form})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def profile_list(request):
     profiles = Profile.objects.all().order_by("surname")
     return render(request, "profile_list.html", {"profiles": profiles})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def ladder_test_view(request):
     if request.method == "POST":
         form = LadderForm(request.POST)
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
+            team_id = request.POST.get("team_id")
             profile = get_object_or_404(Profile, id=profile_id)
             # Retrieve the existing TestResult object if it exists
             try:
@@ -132,13 +163,23 @@ def ladder_test_view(request):
                 )
             except TestResult.DoesNotExist:
                 test_result = None
+    teams = Team.objects.all()
+    active_test = ActiveTest.objects.filter(is_active=True).first()
     return render(
         request,
-        "ladder_test.html",
-        {"form": form, "profiles": profiles, "test_result": test_result},
+        "tests/ladder_test.html",
+        {
+            "form": form,
+            "profiles": profiles,
+            "test_result": test_result,
+            "teams": teams,
+            "active_test": active_test,
+        },
     )
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def brace_test_view(request):
     if request.method == "POST":
         form = BraceForm(request.POST)
@@ -180,11 +221,13 @@ def brace_test_view(request):
     profiles = Profile.objects.all()
     return render(
         request,
-        "brace_test.html",
+        "tests/brace_test.html",
         {"form": form, "profiles": profiles},
     )
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def hexagon_test_view(request):
     if request.method == "POST":
         form = HexagonForm(request.POST)
@@ -226,11 +269,13 @@ def hexagon_test_view(request):
     profiles = Profile.objects.all()
     return render(
         request,
-        "hexagon_test.html",
+        "tests/hexagon_test.html",
         {"form": form, "profiles": profiles},
     )
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def medicimbal_test_view(request):
     if request.method == "POST":
         form = MedicimbalForm(request.POST)
@@ -278,11 +323,13 @@ def medicimbal_test_view(request):
     profiles = Profile.objects.all()
     return render(
         request,
-        "medicimbal_test.html",
+        "tests/medicimbal_test.html",
         {"form": form, "profiles": profiles},
     )
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def jet_test_view(request):
     if request.method == "POST":
         form = JetForm(request.POST)
@@ -321,9 +368,11 @@ def jet_test_view(request):
     else:
         form = JetForm()
     profiles = Profile.objects.all()
-    return render(request, "jet_test.html", {"form": form, "profiles": profiles})
+    return render(request, "tests/jet_test.html", {"form": form, "profiles": profiles})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def y_test_view(request):
     if request.method == "POST":
         form = YTestForm(request.POST)
@@ -432,9 +481,11 @@ def y_test_view(request):
     else:
         form = YTestForm()
     profiles = Profile.objects.all()
-    return render(request, "y_test.html", {"form": form, "profiles": profiles})
+    return render(request, "tests/y_test.html", {"form": form, "profiles": profiles})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def beep_test_view(request):
     if request.method == "POST":
         form = BeepTestForm(request.POST)
@@ -475,9 +526,11 @@ def beep_test_view(request):
     else:
         form = BeepTestForm()
     profiles = Profile.objects.all()
-    return render(request, "beep_test.html", {"form": form, "profiles": profiles})
+    return render(request, "tests/beep_test.html", {"form": form, "profiles": profiles})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def triple_jump_test_view(request):
     if request.method == "POST":
         form = TripleJumpForm(request.POST)
@@ -515,15 +568,93 @@ def triple_jump_test_view(request):
     profiles = Profile.objects.all()
     return render(
         request,
-        "triple_jump_test.html",
+        "tests/triple_jump_test.html",
         {"form": form, "profiles": profiles},
     )
 
 
+@login_required
+@user_passes_test(is_admin)
+def manage_teams(request):
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "add_team":
+            team_name = request.POST.get("team_name")
+            team_description = request.POST.get("team_description")
+            admin_id = request.POST.get("admin_id")
+
+            team = Team.objects.create(name=team_name, description=team_description)
+
+            # Assign the selected foreign admin to the team
+            admin_user = get_object_or_404(User, id=admin_id)
+            admin_user.teams.add(team)
+
+        elif action == "delete_team":
+            team_id = request.POST.get("team_id")
+            Team.objects.filter(id=team_id).delete()
+
+        return redirect("manage_teams")
+
+    # Get all users who are foreign admins
+    foreign_admins = User.objects.filter(groups__name="Foreign Admin")
+    teams = Team.objects.all()
+
+    return render(
+        request,
+        "admin/manage_teams.html",
+        {"foreign_admins": foreign_admins, "teams": teams},
+    )
+
+
+@login_required
+@user_passes_test(is_foreign_admin)
+def manage_active_tests(request):
+    if request.method == "POST":
+        test_id = request.POST.get("test_id")
+        action = request.POST.get("action")
+
+        if action == "activate":
+            ActiveTest.objects.filter(is_active=True).update(is_active=False)
+            ActiveTest.objects.filter(id=test_id).update(is_active=True)
+        elif action == "add":
+            test_name = request.POST.get("test_name")
+            team_id = request.POST.get("team_id")
+            team = get_object_or_404(Team, id=team_id)
+
+            # Deactivate all other tests
+            ActiveTest.objects.filter(is_active=True).update(is_active=False)
+
+            # Create new active test
+            ActiveTest.objects.create(
+                name=test_name, team=team, is_active=True, created_by=request.user
+            )
+
+        return redirect("manage_active_tests")
+
+    # Get teams accessible to the current user
+    if request.user.is_superuser:
+        teams = Team.objects.all()
+    else:
+        teams = request.user.teams.all()
+
+    active_tests = ActiveTest.objects.all().order_by("-created_at")
+    return render(
+        request,
+        "admin/manage_tests.html",
+        {"active_tests": active_tests, "teams": teams},
+    )
+
+
+@login_required
+@user_passes_test(is_adjudicator)
 def adjudicator_dashboard(request):
-    return render(request, "adjudicator_dashboard.html")
+    active_test = ActiveTest.objects.filter(is_active=True).first()
+    return render(request, "adjudicator_dashboard.html", {"active_test": active_test})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def recalculate_scores_view(request):
     # First recalculate all scores
     recalculate_scores(request)
@@ -534,6 +665,8 @@ def recalculate_scores_view(request):
     return render(request, "recalculate_scores.html", {"test_results": test_results})
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def download_radar_plot(request, profile_id):
     test_result = get_object_or_404(TestResult, profile_id=profile_id)
 
@@ -555,6 +688,8 @@ def download_radar_plot(request, profile_id):
     return response
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def get_profile_data(request):
     profile_id = request.GET.get("profile_id")
     profile = get_object_or_404(Profile, id=profile_id)
@@ -567,6 +702,8 @@ def get_profile_data(request):
     return JsonResponse(data)
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def download_pdf_report(request, profile_id):
     test_result = get_object_or_404(TestResult, profile_id=profile_id)
 
@@ -587,21 +724,23 @@ def download_pdf_report(request, profile_id):
     return response
 
 
+@login_required
+@user_passes_test(is_adjudicator)
 def download_all_pdf_reports(request):
     """Download a combined PDF containing all test results."""
     # Get all test results ordered by surname
-    test_results = TestResult.objects.all().order_by('profile__surname')
-    
+    test_results = TestResult.objects.all().order_by("profile__surname")
+
     # Create a BytesIO buffer to receive PDF data
     buffer = BytesIO()
-    
+
     # Generate the PDF with all results
     generate_test_results_pdf(list(test_results), buffer)
-    
+
     # Create the HTTP response with PDF mime type
     buffer.seek(0)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="all_test_results.pdf"'
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="all_test_results.pdf"'
     response.write(buffer.getvalue())
-    
+
     return response
