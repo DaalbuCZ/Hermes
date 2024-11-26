@@ -1,33 +1,32 @@
 <div>
-	<form class="calculator-form" unicorn:submit="save_results">
-		<div class="input-group">
-			<label>Hexagon Time Clockwise:</label>
-			<input type="number" step="0.01" min="0" name="hexagon_time_cw" unicorn:model="time_cw"
-				unicorn:change="calculate_hexagon_score" value="{{ time_cw }}">
-			{% if errors.time_cw %}
-			<div class="error-message">{{ errors.time_cw }}</div>
-			{% endif %}
-		</div>
-
-		<div class="input-group">
-			<label>Hexagon Time Counter-Clockwise:</label>
-			<input type="number" step="0.01" min="0" name="hexagon_time_ccw" unicorn:model="time_ccw"
-				unicorn:change="calculate_hexagon_score" value="{{ time_ccw }}">
-			{% if errors.time_ccw %}
-			<div class="error-message">{{ errors.time_ccw }}</div>
-			{% endif %}
-		</div>
-
-		<div class="score-display">
-			Clockwise Score: {{ score_cw }}
-		</div>
-
-		<div class="score-display">
-			Counter-Clockwise Score: {{ score_ccw }}
-		</div>
-
-		<button type="submit" class="submit-button" {% if not profile_id %}disabled{% endif %}>
-			Save Results
-		</button>
-	</form>
+    {% if warning_message %}<div class="alert alert-warning" role="alert">{{ warning_message|safe }}</div>{% endif %}
+    <form class="calculator-form" unicorn:submit="save_results">
+        <div class="input-group">
+            <label>Hexagon Time Clockwise:</label>
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="hexagon_time_cw"
+                   unicorn:model="time_cw"
+                   unicorn:change="calculate_hexagon_score"
+                   value="{{ time_cw }}">
+            {% if errors.time_cw %}<div class="error-message">{{ errors.time_cw }}</div>{% endif %}
+        </div>
+        <div class="input-group">
+            <label>Hexagon Time Counter-Clockwise:</label>
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="hexagon_time_ccw"
+                   unicorn:model="time_ccw"
+                   unicorn:change="calculate_hexagon_score"
+                   value="{{ time_ccw }}">
+            {% if errors.time_ccw %}<div class="error-message">{{ errors.time_ccw }}</div>{% endif %}
+        </div>
+        <div class="score-display">Clockwise Score: {{ score_cw }}</div>
+        <div class="score-display">Counter-Clockwise Score: {{ score_ccw }}</div>
+        <button type="submit"
+                class="submit-button"
+                {% if not profile_id %}disabled{% endif %}>Save Results</button>
+    </form>
 </div>

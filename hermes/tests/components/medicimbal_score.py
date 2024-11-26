@@ -14,11 +14,22 @@ class MedicimbalScoreView(UnicornView):
     score_2 = 0
     score_3 = 0
     profiles = []
+    warning_message = ""
 
     def mount(self):
-        """Load profiles when component is initialized"""
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
+
+    def check_profile_warning(self, profile):
+        """Check if profile needs a warning"""
+        if profile.gender == "F" or (profile.gender == "M" and profile.height <= 150):
+            self.warning_message = (
+                "Warning: This person is throwing with the <strong>2kg</strong> ball"
+            )
+        else:
+            self.warning_message = (
+                "Warning: This person is throwing with the <strong>3kg</strong> ball"
+            )
 
     def clean_measurement(self, value):
         """Clean and validate measurement input"""
@@ -69,6 +80,7 @@ class MedicimbalScoreView(UnicornView):
     def update_profile(self, profile_id):
         """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
+        self.warning_message = ""  # Reset warning message
 
         # Reset current values
         self.throw_1 = ""
@@ -81,6 +93,9 @@ class MedicimbalScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
+                # Check for warning conditions
+                self.check_profile_warning(profile)
+
                 # Try to get existing test result
                 test_result = TestResult.objects.filter(profile=profile).first()
 

@@ -12,11 +12,21 @@ class HexagonScoreView(UnicornView):
     score_cw = 0
     score_ccw = 0
     profiles = []
+    warning_message = ""
 
     def mount(self):
         """Load profiles when component is initialized"""
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
+
+    def check_profile_warning(self, profile):
+        """Check if profile needs a warning based on height"""
+        if profile.height <= 150:
+            self.warning_message = "Warning: This person is using the <strong>smaller 50cm</strong> hexagon"
+        else:
+            self.warning_message = (
+                "Warning: This person is using the <strong>larger 60cm</strong> hexagon"
+            )
 
     def clean_measurement(self, value):
         """Clean and validate measurement input"""
@@ -61,26 +71,26 @@ class HexagonScoreView(UnicornView):
     def update_profile(self, profile_id):
         """Update profile_id and load existing results if any"""
         self.profile_id = profile_id
-        
+
         # Reset current values
         self.time_cw = ""
         self.time_ccw = ""
         self.score_cw = 0
         self.score_ccw = 0
-        
+
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
                 # Try to get existing test result
                 test_result = TestResult.objects.filter(profile=profile).first()
-                
+
                 if test_result:
                     # Populate existing values if they exist
                     if test_result.hexagon_time_cw is not None:
                         self.time_cw = str(test_result.hexagon_time_cw)
                     if test_result.hexagon_time_ccw is not None:
                         self.time_ccw = str(test_result.hexagon_time_ccw)
-                    
+
                     # Calculate scores for existing values
                     self.calculate_hexagon_score()
             except Profile.DoesNotExist:
