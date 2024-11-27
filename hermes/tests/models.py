@@ -31,6 +31,13 @@ class Profile(models.Model):
     date_of_birth = models.DateField()
     weight = models.IntegerField()
     height = models.IntegerField()
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(
+        "auth.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_profiles",
+    )
     GENDER_CHOICES = [
         ("M", "Muž"),
         ("F", "Žena"),
@@ -141,9 +148,12 @@ class Profile(models.Model):
 
 class TestResult(models.Model):
     id = models.AutoField(primary_key=True)
-    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    profile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="test_results"
+    )
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     test_date = models.DateField(auto_now_add=True)
+    test_name = models.CharField(max_length=100, null=True, blank=True)
     active_test = models.ForeignKey(
         ActiveTest,
         on_delete=models.SET_NULL,

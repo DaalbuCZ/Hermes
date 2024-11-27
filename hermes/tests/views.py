@@ -85,10 +85,30 @@ def add_profile(request):
     if request.method == "POST":
         form = CustomProfileCreationForm(request.POST)
         if form.is_valid():
-            profile = form.save(commit=False)  # Don't save yet
-            profile.save()  # Explicitly save the profile
-            return redirect("profile_list")
+            profile = form.save(commit=False)
+            profile.created_by = request.user  # Set the creator
 
+            # If user is part of a team with active test, assign the team
+            user_teams = request.user.teams.all()
+            active_test = ActiveTest.objects.filter(
+                is_active=True, team__in=user_teams
+            ).first()
+            
+            if active_test:
+                profile.team = active_test.team
+            
+            profile.save()
+
+            # Create initial TestResult for the profile
+            test_result = TestResult.objects.create(
+                profile=profile,
+                team=profile.team,
+                active_test=active_test,
+                test_name=active_test.name if active_test else None,
+                test_date=active_test.created_at if active_test else None
+            )
+            
+            return redirect("profile_list")
     else:
         form = CustomProfileCreationForm()
 
@@ -607,6 +627,34 @@ def manage_teams(request):
     )
 
 
+def assign_team_and_test_details(team, active_test):
+    # Get all adjudicators in the team
+    from django.db.models import Q
+    adjudicators = User.objects.filter(
+        teams=team
+    ).filter(
+        Q(groups__name='Adjudicators') | Q(groups__name='Foreign Admin')
+    ).distinct()
+    
+    # Update all profiles created by these adjudicators
+    for adjudicator in adjudicators:
+        # Assign team to adjudicator's profiles
+        Profile.objects.filter(created_by=adjudicator).update(team=team)
+        
+        # Get profiles created by this adjudicator
+        profiles = Profile.objects.filter(created_by=adjudicator)
+        
+        # Create new test results for each profile
+        for profile in profiles:
+            TestResult.objects.create(
+                profile=profile,
+                team=team,
+                active_test=active_test,
+                test_name=active_test.name,
+                test_date=active_test.created_at
+            )
+
+
 @login_required
 @user_passes_test(is_foreign_admin)
 def manage_active_tests(request):
@@ -615,8 +663,18 @@ def manage_active_tests(request):
         action = request.POST.get("action")
 
         if action == "activate":
+            # Deactivate all other tests
             ActiveTest.objects.filter(is_active=True).update(is_active=False)
-            ActiveTest.objects.filter(id=test_id).update(is_active=True)
+
+            # Activate the selected test
+            active_test = ActiveTest.objects.get(id=test_id)
+            active_test.is_active = True
+            active_test.save()
+
+            # Assign team and test details
+            if active_test.team:
+                assign_team_and_test_details(active_test.team, active_test)
+
         elif action == "add":
             test_name = request.POST.get("test_name")
             team_id = request.POST.get("team_id")
@@ -626,9 +684,12 @@ def manage_active_tests(request):
             ActiveTest.objects.filter(is_active=True).update(is_active=False)
 
             # Create new active test
-            ActiveTest.objects.create(
+            active_test = ActiveTest.objects.create(
                 name=test_name, team=team, is_active=True, created_by=request.user
             )
+
+            # Assign team and test details
+            assign_team_and_test_details(team, active_test)
 
         return redirect("manage_active_tests")
 
