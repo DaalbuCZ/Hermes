@@ -5,6 +5,7 @@
 ## Prerequisites
 
 - Python installed
+- PostgreSQL installed
 - Git (if cloning from a repository)
 - Basic understanding of Django and Python
 
@@ -68,6 +69,5 @@ and admin dashboard at `http://localhost:8000/admin`
 
 ## Additional Considerations
 
-- Verify that the SQLite database file (`db.sqlite3`) is accessible.
 - Check if any environment-specific settings need to be adjusted.
 
