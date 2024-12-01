@@ -14,12 +14,12 @@ class BraceScoreView(UnicornView):
     profiles = []
 
     def mount(self):
-        """Load profiles when component is initialized"""
+        # Load profiles when component is initialized
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
 
     def clean_measurement(self, value):
-        """Clean and validate measurement input"""
+        # Clean and validate measurement input
         if not value and value != 0:  # Handle empty strings and None
             return None
         try:
@@ -29,7 +29,7 @@ class BraceScoreView(UnicornView):
             return None
 
     def calculate_brace_score(self):
-        """Calculate scores whenever inputs change"""
+        # Calculate scores whenever inputs change
         print(
             f"Calculating scores - Profile ID: {self.profile_id}, Time 1: {self.time_1}, Time 2: {self.time_2}"
         )
@@ -37,11 +37,11 @@ class BraceScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                
+
                 # Clean and validate inputs
                 clean_time_1 = self.clean_measurement(self.time_1)
                 clean_time_2 = self.clean_measurement(self.time_2)
-                
+
                 if clean_time_1 is not None:
                     self.score_1 = quick_calculate(
                         profile.age, profile.gender, "brace", clean_time_1
@@ -59,40 +59,41 @@ class BraceScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and load existing results if any"""
+        # Update profile_id and load existing results if any
         self.profile_id = profile_id
-        
+
         # Reset current values
         self.time_1 = ""
         self.time_2 = ""
         self.score_1 = 0
         self.score_2 = 0
-        
+
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
                 # Try to get existing test result
                 test_result = TestResult.objects.filter(profile=profile).first()
-                
+
                 if test_result:
                     # Populate existing values if they exist
                     if test_result.brace_time_1 is not None:
                         self.time_1 = str(test_result.brace_time_1)
                     if test_result.brace_time_2 is not None:
                         self.time_2 = str(test_result.brace_time_2)
-                    
+
                     # Calculate scores for existing values
                     self.calculate_brace_score()
             except Profile.DoesNotExist:
                 print("Selected profile not found")
 
     def save_results(self):
-        """Save the test results to the database"""
+        # Save the test results to the database
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                test_result, created = TestResult.objects.get_or_create(profile=profile)
-
+                test_result, created = TestResult.objects.get_or_create(
+                    profile=profile, active_test=self.active_test
+                )
                 # Clean and validate inputs before saving
                 clean_time_1 = self.clean_measurement(self.time_1)
                 clean_time_2 = self.clean_measurement(self.time_2)
@@ -110,4 +111,3 @@ class BraceScoreView(UnicornView):
                 print(f"Error saving results: {e}")
                 return False
         return False
-

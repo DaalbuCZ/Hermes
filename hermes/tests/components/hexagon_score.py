@@ -15,12 +15,12 @@ class HexagonScoreView(UnicornView):
     warning_message = ""
 
     def mount(self):
-        """Load profiles when component is initialized"""
+        # Load profiles when component is initialized
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
 
     def check_profile_warning(self, profile):
-        """Check if profile needs a warning based on height"""
+        # Check if profile needs a warning based on height
         if profile.height <= 150:
             self.warning_message = "Warning: This person is using the <strong>smaller 50cm</strong> hexagon"
         else:
@@ -29,7 +29,7 @@ class HexagonScoreView(UnicornView):
             )
 
     def clean_measurement(self, value):
-        """Clean and validate measurement input"""
+        # Clean and validate measurement input
         if not value and value != 0:  # Handle empty strings and None
             return None
         try:
@@ -39,7 +39,7 @@ class HexagonScoreView(UnicornView):
             return None
 
     def calculate_hexagon_score(self):
-        """Calculate scores whenever inputs change"""
+        # Calculate scores whenever inputs change
         print(
             f"Calculating scores - Profile ID: {self.profile_id}, Time CW: {self.time_cw}, Time CCW: {self.time_ccw}"
         )
@@ -69,7 +69,7 @@ class HexagonScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and load existing results if any"""
+        # Update profile_id and load existing results if any
         self.profile_id = profile_id
 
         # Reset current values
@@ -97,11 +97,13 @@ class HexagonScoreView(UnicornView):
                 print("Selected profile not found")
 
     def save_results(self):
-        """Save the test results to the database"""
+        # Save the test results to the database
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                test_result, created = TestResult.objects.get_or_create(profile=profile)
+                test_result, created = TestResult.objects.get_or_create(
+                    profile=profile, active_test=self.active_test
+                )
 
                 # Clean and validate inputs before saving
                 clean_time_cw = self.clean_measurement(self.time_cw)

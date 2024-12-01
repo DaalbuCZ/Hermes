@@ -21,7 +21,7 @@ class MedicimbalScoreView(UnicornView):
         print("Component mounted with profiles:", len(self.profiles))
 
     def check_profile_warning(self, profile):
-        """Check if profile needs a warning"""
+        # Check if profile needs a warning
         if profile.gender == "F" or (profile.gender == "M" and profile.height <= 150):
             self.warning_message = (
                 "Warning: This person is throwing with the <strong>2kg</strong> ball"
@@ -32,7 +32,7 @@ class MedicimbalScoreView(UnicornView):
             )
 
     def clean_measurement(self, value):
-        """Clean and validate measurement input"""
+        # Clean and validate measurement input
         if not value and value != 0:  # Handle empty strings and None
             return None
         try:
@@ -42,7 +42,7 @@ class MedicimbalScoreView(UnicornView):
             return None
 
     def calculate_medicimbal_score(self):
-        """Calculate scores whenever inputs change"""
+        # Calculate scores whenever inputs change
         print(
             f"Calculating scores - Profile ID: {self.profile_id}, Throws: {self.throw_1}, {self.throw_2}, {self.throw_3}"
         )
@@ -78,7 +78,7 @@ class MedicimbalScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        """Update profile_id and load existing results if any"""
+        # Update profile_id and load existing results if any
         self.profile_id = profile_id
         self.warning_message = ""  # Reset warning message
 
@@ -114,11 +114,13 @@ class MedicimbalScoreView(UnicornView):
                 print("Selected profile not found")
 
     def save_results(self):
-        """Save the test results to the database"""
+        # Save the test results to the database
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                test_result, created = TestResult.objects.get_or_create(profile=profile)
+                test_result, created = TestResult.objects.get_or_create(
+                    profile=profile, active_test=self.active_test
+                )
 
                 # Clean and validate inputs before saving
                 clean_throw_1 = self.clean_measurement(self.throw_1)

@@ -15,12 +15,12 @@ class BeepTestScoreView(UnicornView):
     profiles = []
 
     def mount(self):
-        """Load profiles when component is initialized"""
+        # Load profiles when component is initialized
         self.profiles = Profile.objects.all()
         print("Component mounted with profiles:", len(self.profiles))
 
     def clean_measurement(self, value):
-        """Clean and validate measurement input"""
+        # Clean and validate measurement input
         if not value and value != 0:  # Handle empty strings and None
             return None
         try:
@@ -30,7 +30,7 @@ class BeepTestScoreView(UnicornView):
             return None
 
     def calculate_beep_test_score(self):
-        """Calculate score whenever inputs change"""
+        # Calculate score whenever inputs change
         if not self.profile_id:
             return
 
@@ -58,7 +58,7 @@ class BeepTestScoreView(UnicornView):
             self.total_laps = None
 
     def update_profile(self, profile_id):
-        """Update profile_id and load existing results if any"""
+        # Update profile_id and load existing results if any
         self.profile_id = profile_id
 
         # Reset current values
@@ -91,13 +91,15 @@ class BeepTestScoreView(UnicornView):
                 print("Selected profile not found")
 
     def save_results(self):
-        """Save the test results to the database"""
+        # Save the test results to the database
         if not self.profile_id:
             return False
 
         try:
             profile = Profile.objects.get(id=self.profile_id)
-            test_result, created = TestResult.objects.get_or_create(profile=profile)
+            test_result, created = TestResult.objects.get_or_create(
+                profile=profile, active_test=self.active_test
+            )
 
             # Clean and validate inputs before saving
             clean_level = self.clean_measurement(self.level)

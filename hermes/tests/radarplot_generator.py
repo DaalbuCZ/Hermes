@@ -51,7 +51,7 @@ def radar_factory(num_vars, frame="circle"):
             self.set_theta_zero_location("N")
 
         def set_rgrids(self, radii, labels=None, **kwargs):
-            """Override set_rgrids to position labels at fixed angle and distance"""
+            # Override set_rgrids to position labels at fixed angle and distance
             self.set_ylim(0, np.max(radii))
             gridlines = super().set_rgrids(radii, labels=[""] * len(radii), **kwargs)[0]
 
@@ -77,11 +77,11 @@ def radar_factory(num_vars, frame="circle"):
             return gridlines, []
 
         def fill(self, *args, closed=True, **kwargs):
-            """Override fill so that line is closed by default"""
+            # Override fill so that line is closed by default
             return super().fill(closed=closed, *args, **kwargs)
 
         def plot(self, *args, **kwargs):
-            """Override plot so that line is closed by default"""
+            # Override plot so that line is closed by default
             lines = super().plot(*args, **kwargs)
             for line in lines:
                 self._close_line(line)

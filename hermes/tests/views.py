@@ -93,10 +93,10 @@ def add_profile(request):
             active_test = ActiveTest.objects.filter(
                 is_active=True, team__in=user_teams
             ).first()
-            
+
             if active_test:
                 profile.team = active_test.team
-            
+
             profile.save()
 
             # Create initial TestResult for the profile
@@ -105,9 +105,9 @@ def add_profile(request):
                 team=profile.team,
                 active_test=active_test,
                 test_name=active_test.name if active_test else None,
-                test_date=active_test.created_at if active_test else None
+                test_date=active_test.created_at if active_test else None,
             )
-            
+
             return redirect("profile_list")
     else:
         form = CustomProfileCreationForm()
@@ -159,6 +159,8 @@ def ladder_test_view(request):
                 test_result.ladder_time_1 = float(ladder_time_1)
             if ladder_time_2:
                 test_result.ladder_time_2 = float(ladder_time_2)
+            # Assign active test
+            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
@@ -224,6 +226,8 @@ def brace_test_view(request):
             if brace_time_2:
                 test_result.brace_time_2 = float(brace_time_2)
 
+            # Assign active test
+            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
@@ -272,6 +276,8 @@ def hexagon_test_view(request):
             if hexagon_time_ccw:
                 test_result.hexagon_time_ccw = float(hexagon_time_ccw)
 
+            # Assign active test
+            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
@@ -323,6 +329,8 @@ def medicimbal_test_view(request):
             if medicimbal_throw_3:
                 test_result.medicimbal_throw_3 = float(medicimbal_throw_3)
 
+            # Assign active test
+            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
             # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
@@ -630,20 +638,21 @@ def manage_teams(request):
 def assign_team_and_test_details(team, active_test):
     # Get all adjudicators in the team
     from django.db.models import Q
-    adjudicators = User.objects.filter(
-        teams=team
-    ).filter(
-        Q(groups__name='Adjudicators') | Q(groups__name='Foreign Admin')
-    ).distinct()
-    
+
+    adjudicators = (
+        User.objects.filter(teams=team)
+        .filter(Q(groups__name="Adjudicators") | Q(groups__name="Foreign Admin"))
+        .distinct()
+    )
+
     # Update all profiles created by these adjudicators
     for adjudicator in adjudicators:
         # Assign team to adjudicator's profiles
         Profile.objects.filter(created_by=adjudicator).update(team=team)
-        
+
         # Get profiles created by this adjudicator
         profiles = Profile.objects.filter(created_by=adjudicator)
-        
+
         # Create new test results for each profile
         for profile in profiles:
             TestResult.objects.create(
@@ -651,7 +660,7 @@ def assign_team_and_test_details(team, active_test):
                 team=team,
                 active_test=active_test,
                 test_name=active_test.name,
-                test_date=active_test.created_at
+                test_date=active_test.created_at,
             )
 
 
@@ -788,7 +797,7 @@ def download_pdf_report(request, profile_id):
 @login_required
 @user_passes_test(is_adjudicator)
 def download_all_pdf_reports(request):
-    """Download a combined PDF containing all test results."""
+    # Download a combined PDF containing all test results.
     # Get all test results ordered by surname
     test_results = TestResult.objects.all().order_by("profile__surname")
 

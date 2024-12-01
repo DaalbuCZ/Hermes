@@ -138,7 +138,7 @@ class Profile(models.Model):
         return TestResult.objects.filter(profile=self).order_by("-test_date").first()
 
     def get_last_three_test_results(self):
-        """Get the last three test results for the profile, ordered by most recent first."""
+        # Get the last three test results for the profile, ordered by most recent first.
         return TestResult.objects.filter(profile=self).order_by("-test_date")[:3]
 
     @property
