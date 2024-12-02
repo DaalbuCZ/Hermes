@@ -358,7 +358,7 @@ def calculate_score(age, gender, test, *args):
         index = math.floor(sum_reach / height / 12 * 100) / 100.0
         for i, score in enumerate(reversed(age_scores)):
             if index > score:
-                return len(age_scores) - i - 1
+                return len(age_scores) - i
             elif index == score:
                 return len(age_scores) - i
         # If score is higher than the highest score in the table
@@ -441,10 +441,10 @@ def quick_calculate(age, gender, test, *args):
 
     elif test == "y_test":
         index = args[0]
-        
+
         for i, score in enumerate(reversed(age_scores)):
             if index > score:
-                return len(age_scores) - i - 1
+                return len(age_scores) - i
             elif index == score:
                 return len(age_scores) - i
         # If score is higher than the highest score in the table

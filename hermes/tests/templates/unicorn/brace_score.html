@@ -2,28 +2,24 @@
     <form class="calculator-form" unicorn:submit="save_results">
         <div class="input-group">
             <label>Brace Time 1:</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="brace_time_1"
-                   unicorn:model="time_1"
-                   unicorn:change="calculate_brace_score"
-                   value="{{ time_1 }}">
+            <input type="number" step="0.01" min="0" name="brace_time_1" unicorn:model="time_1"
+                unicorn:change="calculate_brace_score" value="{{ time_1 }}">
         </div>
         <div class="input-group">
             <label>Brace Time 2:</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="brace_time_2"
-                   unicorn:model="time_2"
-                   unicorn:change="calculate_brace_score"
-                   value="{{ time_2 }}">
+            <input type="number" step="0.01" min="0" name="brace_time_2" unicorn:model="time_2"
+                unicorn:change="calculate_brace_score" value="{{ time_2 }}">
         </div>
         <div class="score-display">Time 1 Score: {{ score_1 }}</div>
         <div class="score-display">Time 2 Score: {{ score_2 }}</div>
-        <button type="submit"
-                class="submit-button"
-                {% if not profile_id %}disabled{% endif %}>Save Results</button>
+        <button type="submit" class="submit-button" {% if not profile_id %}disabled{% endif %}>Save Results</button>
     </form>
+    <div class="previous-results">
+        <h3>Previous Test Results</h3>
+        <div class="previous-result" unicorn:if="previous_result">
+            <div>Previous Time 1: {{ previous_result.brace_time_1 }}</div>
+            <div>Previous Time 2: {{ previous_result.brace_time_2 }}</div>
+            <div>Previous Score: {{ previous_result.brace_score }}</div>
+        </div>
+    </div>
 </div>

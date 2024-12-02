@@ -2,39 +2,31 @@
     <form class="calculator-form" unicorn:submit="save_results">
         <div class="input-group">
             <label>Triple Jump Distance 1 (meters):</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="triple_jump_distance_1"
-                   unicorn:model="distance_1"
-                   unicorn:change="calculate_triple_jump_score"
-                   value="{{ distance_1 }}">
+            <input type="number" step="0.01" min="0" name="triple_jump_distance_1" unicorn:model="distance_1"
+                unicorn:change="calculate_triple_jump_score" value="{{ distance_1 }}">
         </div>
         <div class="input-group">
             <label>Triple Jump Distance 2 (meters):</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="triple_jump_distance_2"
-                   unicorn:model="distance_2"
-                   unicorn:change="calculate_triple_jump_score"
-                   value="{{ distance_2 }}">
+            <input type="number" step="0.01" min="0" name="triple_jump_distance_2" unicorn:model="distance_2"
+                unicorn:change="calculate_triple_jump_score" value="{{ distance_2 }}">
         </div>
         <div class="input-group">
             <label>Triple Jump Distance 3 (meters):</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="triple_jump_distance_3"
-                   unicorn:model="distance_3"
-                   unicorn:change="calculate_triple_jump_score"
-                   value="{{ distance_3 }}">
+            <input type="number" step="0.01" min="0" name="triple_jump_distance_3" unicorn:model="distance_3"
+                unicorn:change="calculate_triple_jump_score" value="{{ distance_3 }}">
         </div>
         <div class="score-display">Distance 1 Score: {{ score_1 }}</div>
         <div class="score-display">Distance 2 Score: {{ score_2 }}</div>
         <div class="score-display">Distance 3 Score: {{ score_3 }}</div>
-        <button type="submit"
-                class="submit-button"
-                {% if not profile_id %}disabled{% endif %}>Save Results</button>
+        <button type="submit" class="submit-button" {% if not profile_id %}disabled{% endif %}>Save Results</button>
     </form>
+    <div class="previous-results">
+        <h3>Previous Test Results</h3>
+        <div class="previous-result" unicorn:if="previous_result">
+            <div>Previous Distance 1: {{ previous_result.triple_jump_distance_1 }}</div>
+            <div>Previous Distance 2: {{ previous_result.triple_jump_distance_2 }}</div>
+            <div>Previous Distance 3: {{ previous_result.triple_jump_distance_3 }}</div>
+            <div>Previous Score: {{ previous_result.triple_jump_score }}</div>
+        </div>
+    </div>
 </div>

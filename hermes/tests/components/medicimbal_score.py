@@ -1,7 +1,8 @@
 from django_unicorn.components import UnicornView
-from tests.models import Profile, TestResult
+from tests.models import Profile, TestResult, ActiveTest
 from tests.score_tables import quick_calculate
 from django.shortcuts import redirect
+from datetime import datetime
 
 
 class MedicimbalScoreView(UnicornView):
@@ -14,10 +15,13 @@ class MedicimbalScoreView(UnicornView):
     score_2 = 0
     score_3 = 0
     profiles = []
+    active_test = None
+    previous_result = None
     warning_message = ""
 
     def mount(self):
         self.profiles = Profile.objects.all()
+        self.active_test = ActiveTest.objects.filter(is_active=True).first()
         print("Component mounted with profiles:", len(self.profiles))
 
     def check_profile_warning(self, profile):
@@ -97,7 +101,9 @@ class MedicimbalScoreView(UnicornView):
                 self.check_profile_warning(profile)
 
                 # Try to get existing test result
-                test_result = TestResult.objects.filter(profile=profile).first()
+                test_result = TestResult.objects.filter(
+                    profile=profile, active_test=self.active_test
+                ).first()
 
                 if test_result:
                     # Populate existing values if they exist
@@ -110,6 +116,18 @@ class MedicimbalScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_medicimbal_score()
+                # Find and display previous test results if they exist
+                previous_results = (
+                    TestResult.objects.filter(profile=profile)
+                    .exclude(id=test_result.id)
+                    .order_by("-test_date")
+                )
+                if previous_results.exists():
+                    self.previous_result = previous_results.first()
+                    print(
+                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
+                    )
+
             except Profile.DoesNotExist:
                 print("Selected profile not found")
 
@@ -137,6 +155,19 @@ class MedicimbalScoreView(UnicornView):
                 test_result.medicimbal_score = max(
                     self.score_1, self.score_2, self.score_3
                 )
+                # Save active test information if available
+                if self.active_test:
+                    test_result.active_test = self.active_test
+                    test_result.test_name = self.active_test.name
+                    try:
+                        test_result.test_date = datetime.strptime(
+                            self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                        ).date()  # Convert to date
+                    except ValueError:
+                        test_result.test_date = datetime.strptime(
+                            self.active_test.created_at, "%Y-%m-%d %H:%M:%S"
+                        ).date()  # Fallback format
+                    test_result.team = self.active_test.team
                 test_result.save()
 
                 return redirect("adjudicator_dashboard")

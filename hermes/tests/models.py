@@ -147,10 +147,18 @@ class Profile(models.Model):
 
 
 class TestResult(models.Model):
-    id = models.AutoField(primary_key=True)
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="test_results"
-    )
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    active_test = models.ForeignKey(ActiveTest, on_delete=models.CASCADE)
+    ladder_time_1 = models.FloatField(null=True, blank=True)
+    ladder_time_2 = models.FloatField(null=True, blank=True)
+    ladder_score = models.FloatField(null=True, blank=True)
+    test_name = models.CharField(max_length=255, null=True, blank=True)
+    test_date = models.DateField(null=True, blank=True)
+    team = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        unique_together = ("profile", "active_test")
+
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     test_date = models.DateField(auto_now_add=True)
     test_name = models.CharField(max_length=100, null=True, blank=True)

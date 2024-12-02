@@ -3,28 +3,24 @@
     <form class="calculator-form" unicorn:submit="save_results">
         <div class="input-group">
             <label>Hexagon Time Clockwise:</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="hexagon_time_cw"
-                   unicorn:model="time_cw"
-                   unicorn:change="calculate_hexagon_score"
-                   value="{{ time_cw }}">
+            <input type="number" step="0.01" min="0" name="hexagon_time_cw" unicorn:model="time_cw"
+                unicorn:change="calculate_hexagon_score" value="{{ time_cw }}">
         </div>
         <div class="input-group">
             <label>Hexagon Time Counter-Clockwise:</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="hexagon_time_ccw"
-                   unicorn:model="time_ccw"
-                   unicorn:change="calculate_hexagon_score"
-                   value="{{ time_ccw }}">
+            <input type="number" step="0.01" min="0" name="hexagon_time_ccw" unicorn:model="time_ccw"
+                unicorn:change="calculate_hexagon_score" value="{{ time_ccw }}">
         </div>
         <div class="score-display">Clockwise Score: {{ score_cw }}</div>
         <div class="score-display">Counter-Clockwise Score: {{ score_ccw }}</div>
-        <button type="submit"
-                class="submit-button"
-                {% if not profile_id %}disabled{% endif %}>Save Results</button>
+        <button type="submit" class="submit-button" {% if not profile_id %}disabled{% endif %}>Save Results</button>
     </form>
+    <div class="previous-results">
+        <h3>Previous Test Results</h3>
+        <div class="previous-result" unicorn:if="previous_result">
+            <div>Previous Time Clockwise: {{ previous_result.hexagon_time_cw }}</div>
+            <div>Previous Time Counter-Clockwise: {{ previous_result.hexagon_time_ccw }}</div>
+            <div>Previous Score: {{ previous_result.hexagon_score }}</div>
+        </div>
+    </div>
 </div>
