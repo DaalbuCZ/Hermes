@@ -45,10 +45,6 @@ def is_adjudicator(user):
     )
 
 
-def get_selected_db(request):
-    return request.session.get("selected_db", "default")
-
-
 @login_required
 @user_passes_test(is_adjudicator)
 def test_results(request):
@@ -99,13 +95,15 @@ def add_profile(request):
 
             profile.save()
 
-            # Create initial TestResult for the profile
-            test_result = TestResult.objects.create(
+            # Check if TestResult already exists for this profile and active test
+            test_result, created = TestResult.objects.get_or_create(
                 profile=profile,
-                team=profile.team,
                 active_test=active_test,
-                test_name=active_test.name if active_test else None,
-                test_date=active_test.created_at if active_test else None,
+                defaults={
+                    "team": profile.team,
+                    "test_name": active_test.name if active_test else None,
+                    "test_date": active_test.created_at if active_test else None,
+                },
             )
 
             return redirect("profile_list")
@@ -147,9 +145,7 @@ def ladder_test_view(request):
             profile = get_object_or_404(Profile, id=profile_id)
             # Retrieve the existing TestResult object if it exists
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
             # Update the fields only if new values are provided
@@ -168,21 +164,19 @@ def ladder_test_view(request):
             time_2 = test_result.ladder_time_2
             score = calculate_score(age, gender, "ladder", time_1, time_2)
             test_result.ladder_score = score
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = LadderForm()
-        profiles = Profile.objects.all()
+        profiles = Profile.objects.filter(team__in=request.user.teams.all())
         test_result = None
         profile_id = request.GET.get("profile_id")
         if profile_id:
             profile = get_object_or_404(Profile, id=profile_id)
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = None
     teams = Team.objects.all()
@@ -211,9 +205,7 @@ def brace_test_view(request):
 
             # Retrieve the existing TestResult object if it exists
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
 
@@ -236,13 +228,13 @@ def brace_test_view(request):
             score = calculate_score(age, gender, "brace", time_1, time_2)
             test_result.brace_score = score
 
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = BraceForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/brace_test.html",
@@ -261,9 +253,7 @@ def hexagon_test_view(request):
 
             # Retrieve the existing TestResult object if it exists
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
 
@@ -286,13 +276,13 @@ def hexagon_test_view(request):
             score = calculate_score(age, gender, "hexagon", time_cw, time_ccw)
             test_result.hexagon_score = score
 
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = HexagonForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/hexagon_test.html",
@@ -311,9 +301,7 @@ def medicimbal_test_view(request):
 
             # Retrieve the existing TestResult object if it exists
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
 
@@ -342,13 +330,13 @@ def medicimbal_test_view(request):
             )
             test_result.medicimbal_score = score
 
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = MedicimbalForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/medicimbal_test.html",
@@ -389,13 +377,13 @@ def jet_test_view(request):
             score = calculate_score(age, gender, "jet", jet_distance)
             test_result.jet_score = score
             test_result.jet_distance = jet_distance
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)
     else:
         form = JetForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(request, "tests/jet_test.html", {"form": form, "profiles": profiles})
 
 
@@ -508,7 +496,7 @@ def y_test_view(request):
             print(form.errors)
     else:
         form = YTestForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(request, "tests/y_test.html", {"form": form, "profiles": profiles})
 
 
@@ -553,7 +541,9 @@ def beep_test_view(request):
             print(form.errors)
     else:
         form = BeepTestForm()
-    profiles = Profile.objects.all()
+    # Filter profiles by the adjudicator's team
+    adjudicator_teams = request.user.teams.all()
+    profiles = Profile.objects.filter(team__in=adjudicator_teams)
     return render(request, "tests/beep_test.html", {"form": form, "profiles": profiles})
 
 
@@ -568,9 +558,7 @@ def triple_jump_test_view(request):
 
             # Retrieve the existing TestResult object if it exists
             try:
-                test_result = TestResult.objects.using(get_selected_db(request)).get(
-                    profile=profile
-                )
+                test_result = TestResult.objects.get(profile=profile)
             except TestResult.DoesNotExist:
                 test_result = TestResult(profile=profile)
 
@@ -587,13 +575,13 @@ def triple_jump_test_view(request):
             score = calculate_score(age, gender, "triple_jump", distance)
             test_result.triple_jump_score = score
 
-            test_result.save(using=get_selected_db(request))
+            test_result.save()
             return redirect("adjudicator_dashboard")
         else:
             print(form.errors)  # Debug print form errors
     else:
         form = TripleJumpForm()
-    profiles = Profile.objects.all()
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/triple_jump_test.html",
@@ -653,14 +641,16 @@ def assign_team_and_test_details(team, active_test):
         # Get profiles created by this adjudicator
         profiles = Profile.objects.filter(created_by=adjudicator)
 
-        # Create new test results for each profile
+        # Create new test results for each profile if not already exists
         for profile in profiles:
-            TestResult.objects.create(
+            TestResult.objects.get_or_create(
                 profile=profile,
-                team=team,
                 active_test=active_test,
-                test_name=active_test.name,
-                test_date=active_test.created_at,
+                defaults={
+                    "team": team,
+                    "test_name": active_test.name,
+                    "test_date": active_test.created_at,
+                },
             )
 
 
@@ -669,11 +659,14 @@ def assign_team_and_test_details(team, active_test):
 def manage_active_tests(request):
     if request.method == "POST":
         test_id = request.POST.get("test_id")
+        team_id = request.POST.get("team_id")
         action = request.POST.get("action")
 
         if action == "activate":
-            # Deactivate all other tests
-            ActiveTest.objects.filter(is_active=True).update(is_active=False)
+            # Deactivate all other tests for the team
+            ActiveTest.objects.filter(is_active=True, team_id=team_id).update(
+                is_active=False
+            )
 
             # Activate the selected test
             active_test = ActiveTest.objects.get(id=test_id)
@@ -689,8 +682,8 @@ def manage_active_tests(request):
             team_id = request.POST.get("team_id")
             team = get_object_or_404(Team, id=team_id)
 
-            # Deactivate all other tests
-            ActiveTest.objects.filter(is_active=True).update(is_active=False)
+            # Deactivate all other tests for the team
+            ActiveTest.objects.filter(is_active=True, team=team).update(is_active=False)
 
             # Create new active test
             active_test = ActiveTest.objects.create(
@@ -708,7 +701,7 @@ def manage_active_tests(request):
     else:
         teams = request.user.teams.all()
 
-    active_tests = ActiveTest.objects.all().order_by("-created_at")
+    active_tests = ActiveTest.objects.filter(team__in=teams).order_by("-created_at")
     return render(
         request,
         "admin/manage_tests.html",

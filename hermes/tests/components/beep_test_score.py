@@ -47,9 +47,7 @@ class BeepTestScoreView(UnicornView):
                 self.total_laps = None
                 return
 
-            clean_laps = (
-                self.clean_measurement(self.laps) or 0
-            )  # FIXME: This is showing 0 in the ui
+            clean_laps = self.clean_measurement(self.laps) or 0
             self.total_laps = calculate_beep_test_total_laps(clean_level, clean_laps)
 
             if self.total_laps is not None:
@@ -89,7 +87,7 @@ class BeepTestScoreView(UnicornView):
                     if test_result.beep_test_laps is not None:
                         self.laps = str(test_result.beep_test_laps)
                     else:
-                        self.laps = 0
+                        self.laps = ""
                     if test_result.max_hr is not None:
                         self.max_hr = str(test_result.max_hr)
 
@@ -117,41 +115,29 @@ class BeepTestScoreView(UnicornView):
 
         try:
             profile = Profile.objects.get(id=self.profile_id)
-            test_result, created = TestResult.objects.get_or_create(
-                profile=profile, active_test=self.active_test
+            test_result, created = TestResult.objects.update_or_create(
+                profile=profile,
+                active_test=self.active_test,
+                defaults={
+                    "beep_test_level": self.clean_measurement(self.level),
+                    "beep_test_laps": self.clean_measurement(self.laps) or 0,
+                    "max_hr": self.clean_measurement(self.max_hr),
+                    "beep_test_total_laps": self.total_laps,
+                    "beep_test_score": calculate_score(
+                        profile.age, profile.gender, "beep_test", self.total_laps
+                    ),
+                    "test_name": self.active_test.name if self.active_test else None,
+                    "test_date": (
+                        datetime.strptime(
+                            self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                        ).date()
+                        if self.active_test
+                        else None
+                    ),
+                    "team": self.active_test.team if self.active_test else None,
+                },
             )
 
-            # Clean and validate inputs before saving
-            clean_level = self.clean_measurement(self.level)
-            clean_laps = self.clean_measurement(self.laps)
-            clean_max_hr = self.clean_measurement(self.max_hr)
-
-            if clean_level is not None:
-                test_result.beep_test_level = clean_level
-            if clean_laps is not None:
-                test_result.beep_test_laps = clean_laps
-            else:
-                test_result.beep_test_laps = 0
-            if clean_max_hr is not None:
-                test_result.max_hr = clean_max_hr
-            if self.total_laps:
-                test_result.beep_test_total_laps = self.total_laps
-            if self.score:
-                test_result.beep_test_score = self.score
-
-            # Save active test information if available
-            if self.active_test:
-                test_result.active_test = self.active_test
-                test_result.test_name = self.active_test.name
-                try:
-                    test_result.test_date = datetime.strptime(
-                        self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-                    ).date()  # Convert to date
-                except ValueError:
-                    test_result.test_date = datetime.strptime(
-                        self.active_test.created_at, "%Y-%m-%d %H:%M:%S"
-                    ).date()  # Fallback format
-                test_result.team = self.active_test.team
             test_result.save()
             return redirect("adjudicator_dashboard")
         except Exception as e:

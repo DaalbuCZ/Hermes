@@ -118,7 +118,13 @@ class LadderScoreView(UnicornView):
                     defaults={
                         "ladder_time_1": self.clean_measurement(self.time_1),
                         "ladder_time_2": self.clean_measurement(self.time_2),
-                        "ladder_score": max(self.score_1, self.score_2),
+                        "ladder_score": calculate_score(
+                            profile.age,
+                            profile.gender,
+                            "ladder",
+                            self.clean_measurement(self.time_1),
+                            self.clean_measurement(self.time_2),
+                        ),
                         "test_name": (
                             self.active_test.name if self.active_test else None
                         ),

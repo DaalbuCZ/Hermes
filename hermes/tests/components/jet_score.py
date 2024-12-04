@@ -106,42 +106,44 @@ class JetScoreView(UnicornView):
 
     def save_results(self):
         # Save the test results to the database
-        if not self.profile_id:
-            return False
+        if self.profile_id:
+            try:
+                profile = Profile.objects.get(id=int(self.profile_id))
+                # Ensure unique constraint on profile and active_test
+                test_result, created = TestResult.objects.update_or_create(
+                    profile=profile,
+                    active_test=self.active_test,
+                    defaults={
+                        "jet_laps": self.clean_measurement(self.laps) or 0,
+                        "jet_sides": self.clean_measurement(self.sides) or 0,
+                        "jet_distance": self.distance,
+                        "jet_score": calculate_score(
+                            profile.age,
+                            profile.gender,
+                            "jet",
+                            (
+                                (self.clean_measurement(self.laps) or 0) * 40
+                                + (self.clean_measurement(self.sides) or 0) * 10
+                            ),
+                        ),
+                        "test_name": (
+                            self.active_test.name if self.active_test else None
+                        ),
+                        "test_date": (
+                            datetime.strptime(
+                                self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                            ).date()
+                            if self.active_test
+                            else None
+                        ),
+                        "team": self.active_test.team if self.active_test else None,
+                    },
+                )
 
-        try:
-            profile = Profile.objects.get(id=int(self.profile_id))
-            test_result, created = TestResult.objects.get_or_create(
-                profile=profile, active_test=self.active_test
-            )
-            # Clean and validate inputs before saving, defaulting to 0 if None
-            clean_laps = self.clean_measurement(self.laps) or 0
-            clean_sides = self.clean_measurement(self.sides) or 0
+                test_result.save()
 
-            # Always save the values since we're defaulting to 0
-            test_result.jet_laps = clean_laps
-            test_result.jet_sides = clean_sides
-
-            if self.distance is not None:
-                test_result.jet_distance = self.distance
-            if self.score is not None:
-                test_result.jet_score = self.score
-
-            # Save active test information if available
-            if self.active_test:
-                test_result.active_test = self.active_test
-                test_result.test_name = self.active_test.name
-                try:
-                    test_result.test_date = datetime.strptime(
-                        self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-                    ).date()  # Convert to date
-                except ValueError:
-                    test_result.test_date = datetime.strptime(
-                        self.active_test.created_at, "%Y-%m-%d %H:%M:%S"
-                    ).date()  # Fallback format
-                test_result.team = self.active_test.team
-            test_result.save()
-            return redirect("adjudicator_dashboard")
-        except Exception as e:
-            print(f"Error saving results: {e}")
-            return False
+                return redirect("adjudicator_dashboard")
+            except Exception as e:
+                print(f"Error saving results: {e}")
+                return False
+        return False

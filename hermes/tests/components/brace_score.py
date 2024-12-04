@@ -1,6 +1,6 @@
 from django_unicorn.components import UnicornView
 from tests.models import Profile, TestResult, ActiveTest
-from tests.score_tables import quick_calculate
+from tests.score_tables import quick_calculate, calculate_score
 from django.shortcuts import redirect
 from datetime import datetime
 
@@ -109,32 +109,34 @@ class BraceScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                test_result, created = TestResult.objects.get_or_create(
-                    profile=profile, active_test=self.active_test
+                # Ensure unique constraint on profile and active_test
+                test_result, created = TestResult.objects.update_or_create(
+                    profile=profile,
+                    active_test=self.active_test,
+                    defaults={
+                        "brace_time_1": self.clean_measurement(self.time_1),
+                        "brace_time_2": self.clean_measurement(self.time_2),
+                        "brace_score": calculate_score(
+                            profile.age,
+                            profile.gender,
+                            "brace",
+                            self.clean_measurement(self.time_1),
+                            self.clean_measurement(self.time_2),
+                        ),
+                        "test_name": (
+                            self.active_test.name if self.active_test else None
+                        ),
+                        "test_date": (
+                            datetime.strptime(
+                                self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                            ).date()
+                            if self.active_test
+                            else None
+                        ),
+                        "team": self.active_test.team if self.active_test else None,
+                    },
                 )
-                # Clean and validate inputs before saving
-                clean_time_1 = self.clean_measurement(self.time_1)
-                clean_time_2 = self.clean_measurement(self.time_2)
 
-                if clean_time_1 is not None:
-                    test_result.brace_time_1 = clean_time_1
-                if clean_time_2 is not None:
-                    test_result.brace_time_2 = clean_time_2
-
-                test_result.brace_score = max(self.score_1, self.score_2)
-                # Save active test information if available
-                if self.active_test:
-                    test_result.active_test = self.active_test
-                    test_result.test_name = self.active_test.name
-                    try:
-                        test_result.test_date = datetime.strptime(
-                            self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-                        ).date()  # Convert to date
-                    except ValueError:
-                        test_result.test_date = datetime.strptime(
-                            self.active_test.created_at, "%Y-%m-%d %H:%M:%S"
-                        ).date()  # Fallback format
-                    test_result.team = self.active_test.team
                 test_result.save()
 
                 return redirect("adjudicator_dashboard")

@@ -1,6 +1,6 @@
 from django_unicorn.components import UnicornView
 from tests.models import Profile, TestResult, ActiveTest
-from tests.score_tables import quick_calculate
+from tests.score_tables import quick_calculate, calculate_score
 from django.shortcuts import redirect
 from datetime import datetime
 
@@ -119,36 +119,34 @@ class HexagonScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
-                test_result, created = TestResult.objects.get_or_create(
-                    profile=profile, active_test=self.active_test
+                # Ensure unique constraint on profile and active_test
+                test_result, created = TestResult.objects.update_or_create(
+                    profile=profile,
+                    active_test=self.active_test,
+                    defaults={
+                        "hexagon_time_cw": self.clean_measurement(self.time_cw),
+                        "hexagon_time_ccw": self.clean_measurement(self.time_ccw),
+                        "hexagon_score": calculate_score(
+                            profile.age,
+                            profile.gender,
+                            "hexagon",
+                            self.clean_measurement(self.time_cw),
+                            self.clean_measurement(self.time_ccw),
+                        ),
+                        "test_name": (
+                            self.active_test.name if self.active_test else None
+                        ),
+                        "test_date": (
+                            datetime.strptime(
+                                self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
+                            ).date()
+                            if self.active_test
+                            else None
+                        ),
+                        "team": self.active_test.team if self.active_test else None,
+                    },
                 )
 
-                # Clean and validate inputs before saving
-                clean_time_cw = self.clean_measurement(self.time_cw)
-                clean_time_ccw = self.clean_measurement(self.time_ccw)
-
-                if clean_time_cw is not None:
-                    test_result.hexagon_time_cw = clean_time_cw
-                if clean_time_ccw is not None:
-                    test_result.hexagon_time_ccw = clean_time_ccw
-
-                test_result.hexagon_score = max(
-                    self.score_cw, self.score_ccw
-                )  # FIXME: Use the calculate score method instead
-
-                # Save active test information if available
-                if self.active_test:
-                    test_result.active_test = self.active_test
-                    test_result.test_name = self.active_test.name
-                    try:
-                        test_result.test_date = datetime.strptime(
-                            self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-                        ).date()  # Convert to date
-                    except ValueError:
-                        test_result.test_date = datetime.strptime(
-                            self.active_test.created_at, "%Y-%m-%d %H:%M:%S"
-                        ).date()  # Fallback format
-                    test_result.team = self.active_test.team
                 test_result.save()
 
                 return redirect("adjudicator_dashboard")
