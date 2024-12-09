@@ -115,6 +115,15 @@ class BeepTestScoreView(UnicornView):
 
         try:
             profile = Profile.objects.get(id=self.profile_id)
+            # Filter active test based on the profile's team
+            self.active_test = ActiveTest.objects.filter(
+                is_active=True, team=profile.team
+            ).first()
+
+            if not self.active_test:
+                print(f"No active test found for team: {profile.team}")
+                return False
+
             test_result, created = TestResult.objects.update_or_create(
                 profile=profile,
                 active_test=self.active_test,

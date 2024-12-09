@@ -159,6 +159,15 @@ class YTestScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
+                # Filter active test based on the profile's team
+                self.active_test = ActiveTest.objects.filter(
+                    is_active=True, team=profile.team
+                ).first()
+
+                if not self.active_test:
+                    print(f"No active test found for team: {profile.team}")
+                    return False
+
                 # Ensure unique constraint on profile and active_test
                 test_result, created = TestResult.objects.update_or_create(
                     profile=profile,

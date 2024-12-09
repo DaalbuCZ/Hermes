@@ -63,8 +63,8 @@ class LadderScoreView(UnicornView):
             print("Missing profile_id")
 
     def update_profile(self, profile_id):
-        # Update profile_id and load existing results if any
         self.profile_id = profile_id
+        # Update profile_id and load existing results if any
 
         # Reset current values
         self.time_1 = ""
@@ -92,11 +92,11 @@ class LadderScoreView(UnicornView):
                     self.calculate_ladder_score()
 
                 # Find and display previous test results if they exist
-                previous_results = (
-                    TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
-                    .order_by("-test_date")
-                )
+                previous_results = TestResult.objects.filter(profile=profile)
+                if test_result:
+                    previous_results = previous_results.exclude(id=test_result.id)
+                previous_results = previous_results.order_by("-test_date")
+
                 if previous_results.exists():
                     self.previous_result = previous_results.first()
                     print(
@@ -111,6 +111,15 @@ class LadderScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
+                # Filter active test based on the profile's team
+                self.active_test = ActiveTest.objects.filter(
+                    is_active=True, team=profile.team
+                ).first()
+
+                if not self.active_test:
+                    print(f"No active test found for team: {profile.team}")
+                    return False
+
                 # Ensure unique constraint on profile and active_test
                 test_result, created = TestResult.objects.update_or_create(
                     profile=profile,
@@ -129,9 +138,7 @@ class LadderScoreView(UnicornView):
                             self.active_test.name if self.active_test else None
                         ),
                         "test_date": (
-                            datetime.strptime(
-                                self.active_test.created_at, "%Y-%m-%dT%H:%M:%S.%fZ"
-                            ).date()
+                            self.active_test.created_at.date()
                             if self.active_test
                             else None
                         ),

@@ -11,8 +11,9 @@ from django.shortcuts import redirect
 
 
 def recalculate_scores(request):
-    # Get all TestResult objects
-    test_results = TestResult.objects.all()
+    # Get all TestResult objects for the user's team
+    user_teams = request.user.teams.all()
+    test_results = TestResult.objects.filter(profile__team__in=user_teams)
 
     # Recalculate scores for each test result
     for test_result in test_results:

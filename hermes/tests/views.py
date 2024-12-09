@@ -712,7 +712,8 @@ def manage_active_tests(request):
 @login_required
 @user_passes_test(is_adjudicator)
 def adjudicator_dashboard(request):
-    active_test = ActiveTest.objects.filter(is_active=True).first()
+    user_teams = request.user.teams.all()
+    active_test = ActiveTest.objects.filter(is_active=True, team__in=user_teams).first()
     return render(request, "adjudicator_dashboard.html", {"active_test": active_test})
 
 
@@ -722,8 +723,11 @@ def recalculate_scores_view(request):
     # First recalculate all scores
     recalculate_scores(request)
 
-    # Get all test results for display
-    test_results = TestResult.objects.all().order_by("profile__surname")
+    # Get all test results for the user's team
+    user_teams = request.user.teams.all()
+    test_results = TestResult.objects.filter(profile__team__in=user_teams).order_by(
+        "profile__surname"
+    )
 
     return render(request, "recalculate_scores.html", {"test_results": test_results})
 

@@ -8,10 +8,14 @@
         <form method="post">
             {% csrf_token %}
             <input type="text" name="test_name" required placeholder="Test name">
+            {% if user.is_superuser %}
             <select name="team_id" required>
                 <option value="">Select Team</option>
                 {% for team in teams %}<option value="{{ team.id }}">{{ team.name }}</option>{% endfor %}
             </select>
+            {% else %}
+            <input type="hidden" name="team_id" value="{{ user.teams.first.id }}">
+            {% endif %}
             <input type="hidden" name="action" value="add">
             <button type="submit">Add Test</button>
         </form>
@@ -19,6 +23,51 @@
     <!-- List of tests -->
     <div class="tests-list">
         <h3>Available Tests</h3>
+        {% if user.is_superuser %}
+        {% for team in teams %}
+        <h4>{{ team.name }}</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Created By</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in active_tests %}
+                {% if test.team == team %}
+                <tr>
+                    <td>{{ test.name }}</td>
+                    <td>
+                        {% if test.is_active %}
+                        Active
+                        {% else %}
+                        Inactive
+                        {% endif %}
+                    </td>
+                    <td>{{ test.created_at }}</td>
+                    <td>{{ test.created_by.username }}</td>
+                    <td>
+                        {% if not test.is_active %}
+                        <form method="post" class="inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="test_id" value="{{ test.id }}">
+                            <input type="hidden" name="team_id" value="{{ test.team.id }}">
+                            <input type="hidden" name="action" value="activate">
+                            <button type="submit">Make Active</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+        {% else %}
         <table>
             <thead>
                 <tr>
@@ -61,6 +110,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}

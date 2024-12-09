@@ -71,6 +71,7 @@ class BraceScoreView(UnicornView):
         self.time_2 = ""
         self.score_1 = 0
         self.score_2 = 0
+        self.previous_result = None
 
         if self.profile_id:
             try:
@@ -89,16 +90,17 @@ class BraceScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_brace_score()
+
                 # Find and display previous test results if they exist
-                previous_results = (
-                    TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
-                    .order_by("-test_date")
-                )
+                previous_results = TestResult.objects.filter(profile=profile)
+                if test_result:
+                    previous_results = previous_results.exclude(id=test_result.id)
+                previous_results = previous_results.order_by("-test_date")
+
                 if previous_results.exists():
                     self.previous_result = previous_results.first()
                     print(
-                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
+                        f"Previous Test Result - Time 1: {self.previous_result.brace_time_1}, Time 2: {self.previous_result.brace_time_2}, Score: {self.previous_result.brace_score}"
                     )
 
             except Profile.DoesNotExist:
@@ -109,6 +111,15 @@ class BraceScoreView(UnicornView):
         if self.profile_id:
             try:
                 profile = Profile.objects.get(id=self.profile_id)
+                # Filter active test based on the profile's team
+                self.active_test = ActiveTest.objects.filter(
+                    is_active=True, team=profile.team
+                ).first()
+
+                if not self.active_test:
+                    print(f"No active test found for team: {profile.team}")
+                    return False
+
                 # Ensure unique constraint on profile and active_test
                 test_result, created = TestResult.objects.update_or_create(
                     profile=profile,
