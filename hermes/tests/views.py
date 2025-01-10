@@ -3,7 +3,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from io import BytesIO
 from .models import ActiveTest, Team
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from .radarplot_generator import generate_radar_plot_from_scores
 from .pdf_report_generator import generate_test_results_pdf
 from reportlab.platypus import PageBreak
@@ -24,9 +24,11 @@ from .forms import (
     YTestForm,
     BeepTestForm,
     TripleJumpForm,
+    AdjudicatorCreationForm,
 )
 from .recalculate_scores import recalculate_scores
 from django.http import JsonResponse
+from django.contrib import messages
 
 
 def is_foreign_admin(user):
@@ -712,3 +714,52 @@ def download_all_pdf_reports(request):
     response.write(buffer.getvalue())
 
     return response
+
+
+@login_required
+@user_passes_test(is_foreign_admin)
+def manage_adjudicators(request):
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "add_adjudicator":
+            form = AdjudicatorCreationForm(request.POST)
+            if form.is_valid():
+                # Create user
+                user = form.save()
+                user.first_name = form.cleaned_data["first_name"]
+                user.last_name = form.cleaned_data["last_name"]
+                user.save()
+
+                # Assign to adjudicators group
+                adjudicator_group = Group.objects.get(name="Adjudicators")
+                user.groups.add(adjudicator_group)
+
+                # Assign to the same teams as the foreign admin
+                user_teams = request.user.teams.all()
+                user.teams.set(user_teams)
+
+                return redirect("manage_adjudicators")
+
+        elif action == "delete_adjudicator":
+            adjudicator_id = request.POST.get("adjudicator_id")
+            User.objects.filter(id=adjudicator_id, groups__name="Adjudicators").delete()
+            return redirect("manage_adjudicators")
+
+    else:
+        form = AdjudicatorCreationForm()
+
+    # Get adjudicators for the teams managed by the foreign admin
+    user_teams = request.user.teams.all()
+    adjudicators = User.objects.filter(
+        groups__name="Adjudicators", teams__in=user_teams
+    ).distinct()
+
+    return render(
+        request,
+        "admin/manage_adjudicators.html",
+        {
+            "form": form,
+            "adjudicators": adjudicators,
+        },
+    )
