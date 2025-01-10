@@ -63,18 +63,6 @@ def index(request):
     return render(request, "index.html")
 
 
-# TODO: Check if user is an adjudicator
-# def is_adjudicator(user):
-#     return user.groups.filter(name='Adjudicators').exists()
-
-# @login_required
-# def my_view(request):
-#     # Your view logic here
-#     return render(request, 'my_template.html')
-
-
-# @login_required
-# @user_passes_test(is_adjudicator)
 @login_required
 @user_passes_test(is_adjudicator)
 def add_profile(request):
@@ -134,6 +122,17 @@ def profile_list(request):
     return render(request, "profile_list.html", {"profiles": profiles})
 
 
+def get_or_create_test_result(profile, test_type, **kwargs):
+    test_result, created = TestResult.objects.get_or_create(
+        profile=profile,
+        defaults=kwargs,
+    )
+    if not created:
+        for key, value in kwargs.items():
+            setattr(test_result, key, value)
+    return test_result
+
+
 @login_required
 @user_passes_test(is_adjudicator)
 def ladder_test_view(request):
@@ -141,33 +140,30 @@ def ladder_test_view(request):
         form = LadderForm(request.POST)
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
-            team_id = request.POST.get("team_id")
             profile = get_object_or_404(Profile, id=profile_id)
-            # Retrieve the existing TestResult object if it exists
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = TestResult(profile=profile)
-            # Update the fields only if new values are provided
             ladder_time_1 = request.POST.get("ladder_time_1")
             ladder_time_2 = request.POST.get("ladder_time_2")
-            if ladder_time_1:
-                test_result.ladder_time_1 = float(ladder_time_1)
-            if ladder_time_2:
-                test_result.ladder_time_2 = float(ladder_time_2)
-            # Assign active test
-            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
-            # Calculate score
+            test_result = get_or_create_test_result(
+                profile,
+                "ladder",
+                ladder_time_1=float(ladder_time_1) if ladder_time_1 else None,
+                ladder_time_2=float(ladder_time_2) if ladder_time_2 else None,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
+            )
             age = test_result.profile.age
             gender = test_result.profile.gender
-            time_1 = test_result.ladder_time_1
-            time_2 = test_result.ladder_time_2
-            score = calculate_score(age, gender, "ladder", time_1, time_2)
+            score = calculate_score(
+                age,
+                gender,
+                "ladder",
+                test_result.ladder_time_1,
+                test_result.ladder_time_2,
+            )
             test_result.ladder_score = score
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)  # Debug print form errors
+            print(form.errors)
     else:
         form = LadderForm()
         profiles = Profile.objects.filter(team__in=request.user.teams.all())
@@ -175,10 +171,7 @@ def ladder_test_view(request):
         profile_id = request.GET.get("profile_id")
         if profile_id:
             profile = get_object_or_404(Profile, id=profile_id)
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = None
+            test_result = TestResult.objects.filter(profile=profile).first()
     teams = Team.objects.all()
     active_test = ActiveTest.objects.filter(is_active=True).first()
     return render(
@@ -202,36 +195,25 @@ def brace_test_view(request):
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            # Retrieve the existing TestResult object if it exists
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = TestResult(profile=profile)
-
-            # Update the fields only if new values are provided
             brace_time_1 = request.POST.get("brace_time_1")
             brace_time_2 = request.POST.get("brace_time_2")
-
-            if brace_time_1:
-                test_result.brace_time_1 = float(brace_time_1)
-            if brace_time_2:
-                test_result.brace_time_2 = float(brace_time_2)
-
-            # Assign active test
-            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
-            # Calculate score
+            test_result = get_or_create_test_result(
+                profile,
+                "brace",
+                brace_time_1=float(brace_time_1) if brace_time_1 else None,
+                brace_time_2=float(brace_time_2) if brace_time_2 else None,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
+            )
             age = test_result.profile.age
             gender = test_result.profile.gender
-            time_1 = test_result.brace_time_1
-            time_2 = test_result.brace_time_2
-            score = calculate_score(age, gender, "brace", time_1, time_2)
+            score = calculate_score(
+                age, gender, "brace", test_result.brace_time_1, test_result.brace_time_2
+            )
             test_result.brace_score = score
-
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)  # Debug print form errors
+            print(form.errors)
     else:
         form = BraceForm()
     profiles = Profile.objects.filter(team__in=request.user.teams.all())
@@ -250,36 +232,29 @@ def hexagon_test_view(request):
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            # Retrieve the existing TestResult object if it exists
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = TestResult(profile=profile)
-
-            # Update the fields only if new values are provided
             hexagon_time_cw = request.POST.get("hexagon_time_cw")
             hexagon_time_ccw = request.POST.get("hexagon_time_ccw")
-
-            if hexagon_time_cw:
-                test_result.hexagon_time_cw = float(hexagon_time_cw)
-            if hexagon_time_ccw:
-                test_result.hexagon_time_ccw = float(hexagon_time_ccw)
-
-            # Assign active test
-            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
-            # Calculate score
+            test_result = get_or_create_test_result(
+                profile,
+                "hexagon",
+                hexagon_time_cw=float(hexagon_time_cw) if hexagon_time_cw else None,
+                hexagon_time_ccw=float(hexagon_time_ccw) if hexagon_time_ccw else None,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
+            )
             age = test_result.profile.age
             gender = test_result.profile.gender
-            time_cw = test_result.hexagon_time_cw
-            time_ccw = test_result.hexagon_time_ccw
-            score = calculate_score(age, gender, "hexagon", time_cw, time_ccw)
+            score = calculate_score(
+                age,
+                gender,
+                "hexagon",
+                test_result.hexagon_time_cw,
+                test_result.hexagon_time_ccw,
+            )
             test_result.hexagon_score = score
-
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)  # Debug print form errors
+            print(form.errors)
     else:
         form = HexagonForm()
     profiles = Profile.objects.filter(team__in=request.user.teams.all())
@@ -298,42 +273,38 @@ def medicimbal_test_view(request):
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            # Retrieve the existing TestResult object if it exists
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = TestResult(profile=profile)
-
-            # Update the fields only if new values are provided
             medicimbal_throw_1 = request.POST.get("medicimbal_throw_1")
             medicimbal_throw_2 = request.POST.get("medicimbal_throw_2")
             medicimbal_throw_3 = request.POST.get("medicimbal_throw_3")
-
-            if medicimbal_throw_1:
-                test_result.medicimbal_throw_1 = float(medicimbal_throw_1)
-            if medicimbal_throw_2:
-                test_result.medicimbal_throw_2 = float(medicimbal_throw_2)
-            if medicimbal_throw_3:
-                test_result.medicimbal_throw_3 = float(medicimbal_throw_3)
-
-            # Assign active test
-            test_result.active_test = ActiveTest.objects.filter(is_active=True).first()
-            # Calculate score
+            test_result = get_or_create_test_result(
+                profile,
+                "medicimbal",
+                medicimbal_throw_1=(
+                    float(medicimbal_throw_1) if medicimbal_throw_1 else None
+                ),
+                medicimbal_throw_2=(
+                    float(medicimbal_throw_2) if medicimbal_throw_2 else None
+                ),
+                medicimbal_throw_3=(
+                    float(medicimbal_throw_3) if medicimbal_throw_3 else None
+                ),
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
+            )
             age = test_result.profile.age
             gender = test_result.profile.gender
-            throw_1 = test_result.medicimbal_throw_1
-            throw_2 = test_result.medicimbal_throw_2
-            throw_3 = test_result.medicimbal_throw_3
             score = calculate_score(
-                age, gender, "medicimbal", throw_1, throw_2, throw_3
+                age,
+                gender,
+                "medicimbal",
+                test_result.medicimbal_throw_1,
+                test_result.medicimbal_throw_2,
+                test_result.medicimbal_throw_3,
             )
             test_result.medicimbal_score = score
-
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:
-            print(form.errors)  # Debug print form errors
+            print(form.errors)
     else:
         form = MedicimbalForm()
     profiles = Profile.objects.filter(team__in=request.user.teams.all())
@@ -350,30 +321,20 @@ def jet_test_view(request):
     if request.method == "POST":
         form = JetForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "jet_laps": int(request.POST.get("jet_laps")),
-                    "jet_sides": int(request.POST.get("jet_sides")),
-                },
+            jet_laps = int(request.POST.get("jet_laps"))
+            jet_sides = int(request.POST.get("jet_sides"))
+            test_result = get_or_create_test_result(
+                profile,
+                "jet",
+                jet_laps=jet_laps,
+                jet_sides=jet_sides,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-
-            # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
-            laps = test_result.jet_laps
-            sides = test_result.jet_sides
-            jet_distance = laps * 40 + sides * 10
-
-            if laps is None or sides is None:
-                return HttpResponse(
-                    "Error: Both jet_laps and jet_sides must be provided", status=400
-                )
-
+            jet_distance = jet_laps * 40 + jet_sides * 10
             score = calculate_score(age, gender, "jet", jet_distance)
             test_result.jet_score = score
             test_result.jet_distance = jet_distance
@@ -393,103 +354,62 @@ def y_test_view(request):
     if request.method == "POST":
         form = YTestForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "y_test_ll_front": float(request.POST.get("y_test_ll_front")),
-                    "y_test_ll_left": float(request.POST.get("y_test_ll_left")),
-                    "y_test_ll_right": float(request.POST.get("y_test_ll_right")),
-                    "y_test_rl_front": float(request.POST.get("y_test_rl_front")),
-                    "y_test_rl_left": float(request.POST.get("y_test_rl_left")),
-                    "y_test_rl_right": float(request.POST.get("y_test_rl_right")),
-                    "y_test_la_left": float(request.POST.get("y_test_la_left")),
-                    "y_test_la_front": float(request.POST.get("y_test_la_front")),
-                    "y_test_la_back": float(request.POST.get("y_test_la_back")),
-                    "y_test_ra_right": float(request.POST.get("y_test_ra_right")),
-                    "y_test_ra_front": float(request.POST.get("y_test_ra_front")),
-                    "y_test_ra_back": float(request.POST.get("y_test_ra_back")),
-                },
+            test_result = get_or_create_test_result(
+                profile,
+                "y_test",
+                y_test_ll_front=float(request.POST.get("y_test_ll_front")),
+                y_test_ll_left=float(request.POST.get("y_test_ll_left")),
+                y_test_ll_right=float(request.POST.get("y_test_ll_right")),
+                y_test_rl_front=float(request.POST.get("y_test_rl_front")),
+                y_test_rl_left=float(request.POST.get("y_test_rl_left")),
+                y_test_rl_right=float(request.POST.get("y_test_rl_right")),
+                y_test_la_left=float(request.POST.get("y_test_la_left")),
+                y_test_la_front=float(request.POST.get("y_test_la_front")),
+                y_test_la_back=float(request.POST.get("y_test_la_back")),
+                y_test_ra_right=float(request.POST.get("y_test_ra_right")),
+                y_test_ra_front=float(request.POST.get("y_test_ra_front")),
+                y_test_ra_back=float(request.POST.get("y_test_ra_back")),
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-
-            # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
             height = test_result.profile.height
-            ll_front = test_result.y_test_ll_front
-            ll_left = test_result.y_test_ll_left
-            ll_right = test_result.y_test_ll_right
-            rl_front = test_result.y_test_rl_front
-            rl_right = test_result.y_test_rl_right
-            rl_left = test_result.y_test_rl_left
-            la_left = test_result.y_test_la_left
-            la_front = test_result.y_test_la_front
-            la_back = test_result.y_test_la_back
-            ra_right = test_result.y_test_ra_right
-            ra_front = test_result.y_test_ra_front
-            ra_back = test_result.y_test_ra_back
-
-            if any(
-                value is None
-                for value in [
-                    ll_front,
-                    ll_left,
-                    ll_right,
-                    rl_front,
-                    rl_right,
-                    rl_left,
-                    la_left,
-                    la_front,
-                    la_back,
-                    ra_right,
-                    ra_front,
-                    ra_back,
-                    height,
-                ]
-            ):
-                return HttpResponse(
-                    "Error: All y_test values must be provided", status=400
-                )
-
             score = calculate_score(
                 age,
                 gender,
                 "y_test",
                 height,
-                ll_front,
-                ll_left,
-                ll_right,
-                rl_front,
-                rl_right,
-                rl_left,
-                la_left,
-                la_front,
-                la_back,
-                ra_right,
-                ra_front,
-                ra_back,
+                test_result.y_test_ll_front,
+                test_result.y_test_ll_left,
+                test_result.y_test_ll_right,
+                test_result.y_test_rl_front,
+                test_result.y_test_rl_left,
+                test_result.y_test_rl_right,
+                test_result.y_test_la_left,
+                test_result.y_test_la_front,
+                test_result.y_test_la_back,
+                test_result.y_test_ra_right,
+                test_result.y_test_ra_front,
+                test_result.y_test_ra_back,
             )
             test_result.y_test_score = score
             test_result.y_test_index = calculate_y_test_index(
                 height,
-                ll_front,
-                ll_left,
-                ll_right,
-                rl_front,
-                rl_right,
-                rl_left,
-                la_left,
-                la_front,
-                la_back,
-                ra_right,
-                ra_front,
-                ra_back,
+                test_result.y_test_ll_front,
+                test_result.y_test_ll_left,
+                test_result.y_test_ll_right,
+                test_result.y_test_rl_front,
+                test_result.y_test_rl_left,
+                test_result.y_test_rl_right,
+                test_result.y_test_la_left,
+                test_result.y_test_la_front,
+                test_result.y_test_la_back,
+                test_result.y_test_ra_right,
+                test_result.y_test_ra_front,
+                test_result.y_test_ra_back,
             )
-            print(test_result.y_test_index)
-            print(test_result.y_test_score)
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:
@@ -506,32 +426,22 @@ def beep_test_view(request):
     if request.method == "POST":
         form = BeepTestForm(request.POST)
         if form.is_valid():
-            test_result = form.save(commit=False)
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                defaults={
-                    "beep_test_laps": int(request.POST.get("beep_test_laps")),
-                    "beep_test_level": int(request.POST.get("beep_test_level")),
-                    "max_hr": int(request.POST.get("max_hr")),
-                },
+            beep_test_laps = int(request.POST.get("beep_test_laps"))
+            beep_test_level = int(request.POST.get("beep_test_level"))
+            max_hr = int(request.POST.get("max_hr"))
+            test_result = get_or_create_test_result(
+                profile,
+                "beep_test",
+                beep_test_laps=beep_test_laps,
+                beep_test_level=beep_test_level,
+                max_hr=max_hr,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-
-            # Calculate score
             age = test_result.profile.age
             gender = test_result.profile.gender
-            laps = test_result.beep_test_laps
-            level = test_result.beep_test_level
-            total_laps = calculate_beep_test_total_laps(level, laps)
-
-            if laps is None or level is None:
-                return HttpResponse(
-                    "Error: Both beep_test_laps and beep_test_level must be provided",
-                    status=400,
-                )
-
+            total_laps = calculate_beep_test_total_laps(beep_test_level, beep_test_laps)
             score = calculate_score(age, gender, "beep_test", total_laps)
             test_result.beep_test_score = score
             test_result.beep_test_total_laps = total_laps
@@ -555,26 +465,17 @@ def triple_jump_test_view(request):
         if form.is_valid():
             profile_id = request.POST.get("profile_id")
             profile = get_object_or_404(Profile, id=profile_id)
-
-            # Retrieve the existing TestResult object if it exists
-            try:
-                test_result = TestResult.objects.get(profile=profile)
-            except TestResult.DoesNotExist:
-                test_result = TestResult(profile=profile)
-
-            # Update the fields only if new values are provided
-            triple_jump_distance = request.POST.get("triple_jump_distance")
-
-            if triple_jump_distance:
-                test_result.triple_jump_distance = float(triple_jump_distance)
-
-            # Calculate score
+            triple_jump_distance = float(request.POST.get("triple_jump_distance"))
+            test_result = get_or_create_test_result(
+                profile,
+                "triple_jump",
+                triple_jump_distance=triple_jump_distance,
+                active_test=ActiveTest.objects.filter(is_active=True).first(),
+            )
             age = test_result.profile.age
             gender = test_result.profile.gender
-            distance = test_result.triple_jump_distance
-            score = calculate_score(age, gender, "triple_jump", distance)
+            score = calculate_score(age, gender, "triple_jump", triple_jump_distance)
             test_result.triple_jump_score = score
-
             test_result.save()
             return redirect("adjudicator_dashboard")
         else:

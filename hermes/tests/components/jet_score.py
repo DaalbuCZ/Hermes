@@ -92,16 +92,19 @@ class JetScoreView(UnicornView):
                     self.calculate_jet_score()
 
                 # Find and display previous test results if they exist
-                previous_results = TestResult.objects.filter(profile=profile)
-                if test_result:
-                    previous_results = previous_results.exclude(id=test_result.id)
-                previous_results = previous_results.order_by("-test_date")
+                previous_results = (
+                    TestResult.objects.filter(profile=profile)
+                    .exclude(active_test=self.active_test)
+                    .order_by("-test_date")
+                )
 
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Laps: {self.previous_result.jet_laps}, Sides: {self.previous_result.jet_sides}, Score: {self.previous_result.jet_score}"
-                    )
+                for result in previous_results:
+                    if result.jet_laps is not None or result.jet_sides is not None:
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Laps: {self.previous_result.jet_laps}, Sides: {self.previous_result.jet_sides}, Score: {self.previous_result.jet_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

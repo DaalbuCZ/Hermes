@@ -102,16 +102,22 @@ class HexagonScoreView(UnicornView):
                     self.calculate_hexagon_score()
 
                 # Find and display previous test results if they exist
-                previous_results = TestResult.objects.filter(profile=profile)
-                if test_result:
-                    previous_results = previous_results.exclude(id=test_result.id)
-                previous_results = previous_results.order_by("-test_date")
+                previous_results = (
+                    TestResult.objects.filter(profile=profile)
+                    .exclude(active_test=self.active_test)
+                    .order_by("-test_date")
+                )
 
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time CW: {self.previous_result.hexagon_time_cw}, Time CCW: {self.previous_result.hexagon_time_ccw}, Score: {self.previous_result.hexagon_score}"
-                    )
+                for result in previous_results:
+                    if (
+                        result.hexagon_time_cw is not None
+                        or result.hexagon_time_ccw is not None
+                    ):
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Time CW: {self.previous_result.hexagon_time_cw}, Time CCW: {self.previous_result.hexagon_time_ccw}, Score: {self.previous_result.hexagon_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

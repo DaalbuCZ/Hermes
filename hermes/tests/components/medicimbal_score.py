@@ -116,17 +116,24 @@ class MedicimbalScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_medicimbal_score()
+
                 # Find and display previous test results if they exist
                 previous_results = (
                     TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
+                    .exclude(active_test=self.active_test)
                     .order_by("-test_date")
                 )
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
-                    )
+
+                for result in previous_results:
+                    if (
+                        result.ladder_time_1 is not None
+                        or result.ladder_time_2 is not None
+                    ):
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

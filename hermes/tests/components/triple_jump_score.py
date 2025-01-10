@@ -81,6 +81,7 @@ class TripleJumpScoreView(UnicornView):
         self.score_1 = 0
         self.score_2 = 0
         self.score_3 = 0
+        self.previous_result = None
 
         if self.profile_id:
             try:
@@ -101,17 +102,21 @@ class TripleJumpScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_triple_jump_score()
+
                 # Find and display previous test results if they exist
                 previous_results = (
                     TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
+                    .exclude(active_test=self.active_test)
                     .order_by("-test_date")
                 )
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
-                    )
+
+                for result in previous_results:
+                    if result.triple_jump_distance_1 is not None:
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Distance: {self.previous_result.triple_jump_distance_1}, Score: {self.previous_result.triple_jump_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

@@ -92,16 +92,22 @@ class BraceScoreView(UnicornView):
                     self.calculate_brace_score()
 
                 # Find and display previous test results if they exist
-                previous_results = TestResult.objects.filter(profile=profile)
-                if test_result:
-                    previous_results = previous_results.exclude(id=test_result.id)
-                previous_results = previous_results.order_by("-test_date")
+                previous_results = (
+                    TestResult.objects.filter(profile=profile)
+                    .exclude(active_test=self.active_test)
+                    .order_by("-test_date")
+                )
 
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time 1: {self.previous_result.brace_time_1}, Time 2: {self.previous_result.brace_time_2}, Score: {self.previous_result.brace_score}"
-                    )
+                for result in previous_results:
+                    if (
+                        result.brace_time_1 is not None
+                        or result.brace_time_2 is not None
+                    ):
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Time 1: {self.previous_result.brace_time_1}, Time 2: {self.previous_result.brace_time_2}, Score: {self.previous_result.brace_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

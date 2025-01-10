@@ -71,6 +71,7 @@ class BeepTestScoreView(UnicornView):
         self.max_hr = ""
         self.total_laps = 0
         self.score = 0
+        self.previous_result = None
 
         if self.profile_id:
             try:
@@ -93,17 +94,24 @@ class BeepTestScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_beep_test_score()
+
                 # Find and display previous test results if they exist
                 previous_results = (
                     TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
+                    .exclude(active_test=self.active_test)
                     .order_by("-test_date")
                 )
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
-                    )
+
+                for result in previous_results:
+                    if (
+                        result.beep_test_level is not None
+                        or result.beep_test_laps is not None
+                    ):
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Level: {self.previous_result.beep_test_level}, Laps: {self.previous_result.beep_test_laps}, Score: {self.previous_result.beep_test_score}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")

@@ -105,6 +105,7 @@ class YTestScoreView(UnicornView):
         self.la_left = self.la_front = self.la_back = ""
         self.ra_right = self.ra_front = self.ra_back = ""
         self.y_test_score = self.y_test_index = None
+        self.previous_result = None
 
         if self.profile_id:
             try:
@@ -115,7 +116,7 @@ class YTestScoreView(UnicornView):
                 ).first()
 
                 if test_result:
-                    # Map of component fields to database fields
+                    # Populate existing values if they exist
                     fields = {
                         "ll_front": "y_test_ll_front",
                         "ll_left": "y_test_ll_left",
@@ -131,7 +132,6 @@ class YTestScoreView(UnicornView):
                         "ra_back": "y_test_ra_back",
                     }
 
-                    # Populate existing values if they exist
                     for component_field, db_field in fields.items():
                         value = getattr(test_result, db_field, None)
                         if value is not None:
@@ -139,17 +139,37 @@ class YTestScoreView(UnicornView):
 
                     # Calculate scores for existing values
                     self.calculate_y_test_score()
+
                 # Find and display previous test results if they exist
                 previous_results = (
                     TestResult.objects.filter(profile=profile)
-                    .exclude(id=test_result.id)
+                    .exclude(active_test=self.active_test)
                     .order_by("-test_date")
                 )
-                if previous_results.exists():
-                    self.previous_result = previous_results.first()
-                    print(
-                        f"Previous Test Result - Time 1: {self.previous_result.ladder_time_1}, Time 2: {self.previous_result.ladder_time_2}, Score: {self.previous_result.ladder_score}"
-                    )
+
+                for result in previous_results:
+                    if any(
+                        getattr(result, f"y_test_{field}", None) is not None
+                        for field in [
+                            "ll_front",
+                            "ll_left",
+                            "ll_right",
+                            "rl_front",
+                            "rl_left",
+                            "rl_right",
+                            "la_left",
+                            "la_front",
+                            "la_back",
+                            "ra_right",
+                            "ra_front",
+                            "ra_back",
+                        ]
+                    ):
+                        self.previous_result = result
+                        print(
+                            f"Previous Test Result - Y-Test Score: {self.previous_result.y_test_score}, Y-Test Index: {self.previous_result.y_test_index}"
+                        )
+                        break
 
             except Profile.DoesNotExist:
                 print("Selected profile not found")
