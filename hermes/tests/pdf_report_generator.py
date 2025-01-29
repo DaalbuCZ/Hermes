@@ -14,22 +14,67 @@ from reportlab.platypus import (
 from io import BytesIO
 from .radarplot_generator import generate_radar_plot_from_scores
 from PIL import Image as PILImage
+from .models import TestResult
 
 
-def generate_test_results_pdf(test_results, output):
-    """
-    Generate a PDF report containing test results and radar plots for multiple profiles
+def get_best_test_scores(profile, active_test, team):
+    test_results = TestResult.objects.filter(
+        profile=profile, active_test=active_test, team=team
+    )
+    if not test_results:
+        return None
 
-    Parameters:
-    -----------
-    test_results : list of TestResult or single TestResult
-        The test result object(s) containing all scores
-    output : str or BytesIO
-        Path where the PDF should be saved or a BytesIO object to write to
-    """
+    return {
+        "Ladder": max(
+            (r.ladder_score for r in test_results if r.ladder_score is not None),
+            default=None,
+        ),
+        "Hexagon": max(
+            (r.hexagon_score for r in test_results if r.hexagon_score is not None),
+            default=None,
+        ),
+        "Y-Test": max(
+            (r.y_test_score for r in test_results if r.y_test_score is not None),
+            default=None,
+        ),
+        "Brace": max(
+            (r.brace_score for r in test_results if r.brace_score is not None),
+            default=None,
+        ),
+        "Medicimbal": max(
+            (
+                r.medicimbal_score
+                for r in test_results
+                if r.medicimbal_score is not None
+            ),
+            default=None,
+        ),
+        "Jet": max(
+            (r.jet_score for r in test_results if r.jet_score is not None), default=None
+        ),
+        "Triple Jump": max(
+            (
+                r.triple_jump_score
+                for r in test_results
+                if r.triple_jump_score is not None
+            ),
+            default=None,
+        ),
+        "Beep Test": max(
+            (r.beep_test_score for r in test_results if r.beep_test_score is not None),
+            default=None,
+        ),
+    }
+
+
+def generate_test_results_pdf(test_results, output, adjudicator):
     # Handle single test result case
     if not isinstance(test_results, (list, tuple)):
         test_results = [test_results]
+
+    # Filter test results for profiles in adjudicator's teams
+    adjudicator_teams = adjudicator.teams.all()
+    test_results = [tr for tr in test_results if tr.profile.team in adjudicator_teams]
 
     doc = SimpleDocTemplate(
         output,
@@ -47,6 +92,101 @@ def generate_test_results_pdf(test_results, output):
         "CustomTitle", parent=styles["Heading1"], fontSize=24, spaceAfter=30
     )
 
+    # Add Best Results section at the beginning
+    story.append(Paragraph("Team Best Results", title_style))
+    story.append(Spacer(1, 12))
+
+    # Create best results table
+    best_results_data = [
+        [
+            "Name",
+            "Ladder",
+            "Hexagon",
+            "Y-Test",
+            "Brace",
+            "Medicimbal",
+            "Jet",
+            "Triple Jump",
+            "Beep Test",
+        ],
+    ]
+
+    # Get unique profiles and active test from filtered test results
+    profiles = {result.profile for result in test_results}
+    active_test = test_results[0].active_test if test_results else None
+
+    for profile in profiles:
+        best_scores = get_best_test_scores(profile, active_test, profile.team)
+        if best_scores:
+            best_results_data.append(
+                [
+                    profile.full_name,
+                    (
+                        str(best_scores["Ladder"])
+                        if best_scores["Ladder"] is not None
+                        else "-"
+                    ),
+                    (
+                        str(best_scores["Hexagon"])
+                        if best_scores["Hexagon"] is not None
+                        else "-"
+                    ),
+                    (
+                        str(best_scores["Y-Test"])
+                        if best_scores["Y-Test"] is not None
+                        else "-"
+                    ),
+                    (
+                        str(best_scores["Brace"])
+                        if best_scores["Brace"] is not None
+                        else "-"
+                    ),
+                    (
+                        str(best_scores["Medicimbal"])
+                        if best_scores["Medicimbal"] is not None
+                        else "-"
+                    ),
+                    str(best_scores["Jet"]) if best_scores["Jet"] is not None else "-",
+                    (
+                        str(best_scores["Triple Jump"])
+                        if best_scores["Triple Jump"] is not None
+                        else "-"
+                    ),
+                    (
+                        str(best_scores["Beep Test"])
+                        if best_scores["Beep Test"] is not None
+                        else "-"
+                    ),
+                ]
+            )
+
+    # Calculate column widths to fit the page
+    name_width = 2 * inch
+    score_width = 0.75 * inch
+    total_width = 8 * score_width + name_width
+
+    best_table = Table(best_results_data, colWidths=[name_width] + [score_width] * 8)
+    best_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 1), (-1, -1), 10),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]
+        )
+    )
+
+    story.append(best_table)
+    story.append(PageBreak())
+
     for test_result in test_results:
         # Add title for each person
         story.append(
@@ -54,46 +194,51 @@ def generate_test_results_pdf(test_results, output):
         )
         story.append(Spacer(1, 12))
 
-        # Create table data
+        # Get the last 3 test results for this profile
+        last_three_results = list(
+            TestResult.objects.filter(
+                profile=test_result.profile,
+                active_test=test_result.active_test,
+                team=test_result.team,
+            ).order_by("-test_date")[:3]
+        )
+
+        # Ensure current test result is included and first in the list
+        if test_result not in last_three_results:
+            last_three_results = [test_result] + list(last_three_results[:2])
+        else:
+            last_three_results.remove(test_result)
+            last_three_results.insert(0, test_result)
+
+        # Historical results are all except the current one
+        historical_results = last_three_results[1:]
+
+        # Create table data with dates as columns
         data = [
-            ["Category", "Score", "Previous", "Change"],
+            ["Category"]
+            + [result.test_date.strftime("%Y-%m-%d") for result in last_three_results],
         ]
 
-        # Get previous test result for comparison
-        previous_results = test_result.profile.get_last_three_test_results()
-        previous_result = previous_results[1] if len(previous_results) > 1 else None
-
-        def format_change(current, previous):
-            if previous is None:
-                return "-"
-            change = current - previous
-            return f"{change:+.1f}" if change != 0 else "0.0"
-
-        # Add scores with comparison
+        # Add scores for each category
         categories = [
-            ("Strength Score", test_result.strength_score),
-            ("Speed Score", test_result.speed_score),
-            ("Endurance Score", test_result.endurance_score),
-            ("Agility Score", test_result.agility_score),
+            ("Strength Score", "strength_score"),
+            ("Speed Score", "speed_score"),
+            ("Endurance Score", "endurance_score"),
+            ("Agility Score", "agility_score"),
         ]
 
-        for category, current_score in categories:
-            prev_score = (
-                getattr(previous_result, category.lower().replace(" ", "_"), None)
-                if previous_result
-                else None
-            )
-            data.append(
-                [
-                    category,
-                    f"{current_score:.1f}",
-                    f"{prev_score:.1f}" if prev_score is not None else "-",
-                    format_change(current_score, prev_score),
-                ]
-            )
+        for category_name, field_name in categories:
+            row = [category_name]
+            for result in last_three_results:
+                score = getattr(result, field_name)
+                row.append(f"{score:.1f}" if score is not None else "-")
+            data.append(row)
 
-        # Create table
-        table = Table(data, colWidths=[3 * inch, 1.5 * inch, 1.5 * inch, 1.5 * inch])
+        # Create table with equal column widths
+        num_columns = len(last_three_results) + 1  # +1 for category column
+        column_width = 7.5 * inch / num_columns
+        table = Table(data, colWidths=[column_width] * num_columns)
+
         table.setStyle(
             TableStyle(
                 [
@@ -116,15 +261,12 @@ def generate_test_results_pdf(test_results, output):
         story.append(table)
         story.append(Spacer(1, 30))
 
-        # Get historical results (excluding the current one)
-        historical_results = list(previous_results[1:])
-
-        # Generate and add radar plot
+        # Get historical results from the last three results for the radar plot
         radar_buffer = generate_radar_plot_from_scores(
-            test_result.speed_score,
-            test_result.endurance_score,
-            test_result.agility_score,
-            test_result.strength_score,
+            test_result.speed_score or 0,
+            test_result.endurance_score or 0,
+            test_result.agility_score or 0,
+            test_result.strength_score or 0,
             historical_results=historical_results,
         )
 
