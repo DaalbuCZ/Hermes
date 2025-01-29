@@ -18,6 +18,7 @@
         "username": "daalbu",
         "database": "hermes_db"
       }
-    ]
+    ],
+    "git.ignoreLimitWarning": true
   }
 }
