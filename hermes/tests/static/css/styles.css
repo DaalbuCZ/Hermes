@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css');
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
@@ -226,4 +228,25 @@ button:hover {
 .navbar-nav .nav-link button:hover {
     color: #bd2130;
     text-decoration: none;
+}
+
+/* Styles for index page */
+.jumbotron {
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    background-color: #e9ecef;
+    border-radius: 0.3rem;
+}
+
+.jumbotron h1 {
+    font-size: 2.5rem;
+}
+
+.jumbotron p {
+    font-size: 1.25rem;
+}
+
+.jumbotron .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 1.25rem;
 }

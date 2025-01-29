@@ -14,14 +14,14 @@ class BeepTestScoreView(UnicornView):
     total_laps = 0
     score = 0
     profiles = []
+    profiles_combobox = []  # Renamed for clarity
     active_test = None
     previous_result = None
 
     def mount(self):
-        # Load profiles when component is initialized
-        self.profiles = Profile.objects.all()
+        self.profiles_combobox = Profile.objects.all()
         self.active_test = ActiveTest.objects.filter(is_active=True).first()
-        print("Component mounted with profiles:", len(self.profiles))
+        print("Component mounted with profiles:", len(self.profiles_combobox))
 
     def clean_measurement(self, value):
         # Clean and validate measurement input

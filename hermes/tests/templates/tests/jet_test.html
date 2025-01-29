@@ -2,46 +2,65 @@
 {% load unicorn %}
 {% load static %}
 {% block title %}
-  Jet Test
+Jet Test - HERMES
 {% endblock title %}
 {% block extra_css %}
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css"
-        rel="stylesheet" />
-  <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
-  <link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+<link rel="stylesheet" href="{% static 'css/test_styles.css' %}" />
 {% endblock extra_css %}
 {% block content %}
-  {% unicorn_scripts %}
-  <h2>Jet Test</h2>
+<section class="section">
   <div class="container">
-    <div class="profile-selector">
-      <label for="profile_search">Select Profile:</label>
-      <input type="text"
-             id="profile_search"
-             placeholder="Search profiles..."
-             autocomplete="off" />
-      <ul id="profile_list" class="dropdown-content">
-        {% for profile in profiles %}
-          <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% unicorn 'jet-score' %}
+    <h1 class="title">Jet Test</h1>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label">Profile</label>
+        <div class="control">
+          <div class="select">
+            <select name="profile_id">
+              {% for profile in profiles %}
+              <option value="{{ profile.id }}">{{ profile.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Jet Laps</label>
+        <div class="control">
+          <input class="input" type="number" name="jet_laps" value="{{ test_result.jet_laps }}">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Jet Sides</label>
+        <div class="control">
+          <input class="input" type="number" name="jet_sides" value="{{ test_result.jet_sides }}">
+        </div>
+      </div>
+      <div class="field">
+        <div class="control">
+          <button class="button is-link" type="submit">Save</button>
+        </div>
+      </div>
+    </form>
   </div>
+</section>
 {% endblock content %}
 {% block extra_js %}
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
-  <script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+<script>
   $(document).ready(function () {
     // Create a wrapper div for the input and clear button
     $("#profile_search").wrap('<div class="search-input-wrapper" style="position: relative;"></div>');
-    
+
     // Add clear button inside input
     $(".search-input-wrapper").append('<span id="clear_profile" style="position: relative; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; display: none;">&times;</span>');
-    
+
     // Show/hide clear button based on input content
-    $("#profile_search").on("input", function() {
+    $("#profile_search").on("input", function () {
       $("#clear_profile").toggle(Boolean($(this).val()));
     });
 
@@ -72,7 +91,7 @@
     });
 
     // Clear button click handler
-    $("#clear_profile").on("click", function() {
+    $("#clear_profile").on("click", function () {
       $("#profile_search").val("");
       $("#profile_id").val("");
       $(this).hide();
@@ -89,5 +108,5 @@
       }
     });
   });
-  </script>
+</script>
 {% endblock extra_js %}

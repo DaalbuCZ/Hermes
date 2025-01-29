@@ -2,7 +2,7 @@
 {% load unicorn %}
 {% load static %}
 {% block title %}
-Beep Test
+Beep Test - HERMES
 {% endblock title %}
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -11,20 +11,49 @@ Beep Test
 {% endblock extra_css %}
 {% block content %}
 {% unicorn_scripts %}
-<h2>Beep Test</h2>
-<div class="container">
-  <div class="profile-selector">
-    <label for="profile_search">Select Profile:</label>
-    <input type="text" id="profile_search" placeholder="Search profiles..." autocomplete="off" />
-    <ul id="profile_list" class="dropdown-content">
-      {% for profile in profiles %}
-      <li data-value="{{ profile.id }}">{{ profile.surname }} {{ profile.name }}</li>
-      {% endfor %}
-    </ul>
-    <input type="hidden" name="profile_id" id="profile_id" />
+<section class="section">
+  <div class="container">
+    <h1 class="title">Beep Test</h1>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label class="label">Profile</label>
+        <div class="control">
+          <div class="select">
+            <select name="profile_id">
+              {% for profile in profiles %}
+              <option value="{{ profile.id }}">{{ profile.full_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Beep Test Laps</label>
+        <div class="control">
+          <input class="input" type="number" name="beep_test_laps" value="{{ test_result.beep_test_laps }}">
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Beep Test Level</label>
+        <div class="control"></div>
+        <input class="input" type="number" name="beep_test_level" value="{{ test_result.beep_test_level }}">
+      </div>
   </div>
-  {% unicorn 'beep-test-score' %}
-</div>
+  <div class="field">
+    <label class="label">Max HR</label>
+    <div class="control">
+      <input class="input" type="number" name="max_hr" value="{{ test_result.max_hr }}">
+    </div>
+  </div>
+  <div class="field">
+    <div class="control">
+      <button class="button is-link" type="submit">Save</button>
+    </div>
+  </div>
+  </form>
+  </div>
+</section>
 {% endblock content %}
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
