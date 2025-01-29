@@ -1,4 +1,5 @@
 import matplotlib
+from io import BytesIO
 
 matplotlib.use("Agg")  # Must be before importing pyplot
 import matplotlib.pyplot as plt
@@ -162,122 +163,63 @@ def radar_factory(num_vars, frame="circle"):
 def generate_radar_plot_from_scores(
     speed, endurance, agility, strength, historical_results=None
 ):
-    """
-    Generate a radar plot from athlete test scores.
+    # Set up the data
+    categories = ["Speed", "Endurance", "Agility", "Strength"]
+    current_scores = [speed, endurance, agility, strength]
 
-    Parameters
-    ----------
-    speed : float
-        Speed score (0-20)
-    endurance : float
-        Endurance score (0-20)
-    agility : float
-        Agility score (0-20)
-    strength : float
-        Strength score (0-20)
-    historical_results : list of dict, optional
-        List of historical results, each containing speed, endurance, agility, and strength scores
+    # Create figure and polar subplot
+    fig, ax = plt.subplots(figsize=(8, 6), subplot_kw=dict(projection="polar"))
 
-    Returns
-    -------
-    BytesIO
-        Buffer containing the PNG image of the radar plot
-    """
-    theta = radar_factory(4, frame="polygon")
+    # Number of variables
+    num_vars = len(categories)
 
-    # Create plot
-    fig, ax = plt.subplots(figsize=(7, 6), subplot_kw=dict(projection="radar"))
-    fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
+    # Compute angle for each axis
+    angles = [n / float(num_vars) * 2 * np.pi for n in range(num_vars)]
+    angles += angles[:1]
 
-    spoke_labels = ["Speed", "Endurance", "Agility", "Strength"]
-    ax.set_ylim(0, 20)
-    ax.set_rgrids([5, 10, 15, 20])
-    ax.set_varlabels(spoke_labels)
+    # Plot current scores
+    values = current_scores + [current_scores[0]]
+    ax.plot(angles, values, "o-", linewidth=2, label="Current", color="blue")
+    ax.fill(angles, values, alpha=0.25, color="blue")
 
-    # Plot current data
-    current_data = [speed, endurance, agility, strength]
-    ax.plot(theta, current_data, color="b", label="Current", linewidth=2)
-    ax.fill(theta, current_data, color="b", alpha=0.25)
-
-    # Plot historical data if provided
+    # Plot historical results if available
+    colors = ["red", "green"]  # Colors for previous results
     if historical_results:
-        colors = ["r", "g"]  # Colors for historical results
-        for idx, result in enumerate(historical_results):
-            historical_data = [
-                result.speed_score,
-                result.endurance_score,
-                result.agility_score,
-                result.strength_score,
+        for idx, hist_result in enumerate(
+            historical_results[:2]
+        ):  # Limit to 2 historical results
+            hist_scores = [
+                hist_result.speed_score or 0,  # Handle None values
+                hist_result.endurance_score or 0,
+                hist_result.agility_score or 0,
+                hist_result.strength_score or 0,
             ]
-            date_str = result.test_date.strftime("%Y-%m-%d")
+            hist_scores += [hist_scores[0]]  # Close the polygon
             ax.plot(
-                theta,
-                historical_data,
+                angles,
+                hist_scores,
+                "o-",
+                linewidth=2,
+                label=f'Test {hist_result.test_date.strftime("%Y-%m-%d")}',
                 color=colors[idx],
-                label=f"Previous ({date_str})",
-                linestyle="--",
-                alpha=0.7,
             )
-            ax.fill(theta, historical_data, color=colors[idx], alpha=0.1)
+            ax.fill(angles, hist_scores, alpha=0.1, color=colors[idx])
 
-    ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
+    # Set category labels
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories)
 
-    # Save to bytes buffer
-    from io import BytesIO
+    # Set chart properties
+    ax.set_ylim(0, 20)
+    plt.grid(True)
 
-    buf = BytesIO()
-    plt.savefig(buf, format="png", dpi=300)
+    # Add legend
+    plt.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
+
+    # Save plot to buffer
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png", dpi=300, bbox_inches="tight")
+    buffer.seek(0)
     plt.close()
-    buf.seek(0)
-    return buf
 
-
-# def example_data():
-#     data = [
-#         [  # FIXME: this is counterclockwise
-#             "Strength",
-#             "Speed",
-#             "Endurance",
-#             "Mobility",
-#         ],
-#         (
-#             "tst",
-#             [
-#                 [20, 15, 10, 5],
-#                 [12, 3, 6, 17],
-#                 [13, 6, 7, 10],
-#             ],
-#         ),
-#     ]
-#     return data
-
-
-# theta = radar_factory(4, frame="polygon")
-
-# data = example_data()
-# spoke_labels = data.pop(0)
-
-# fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(projection="radar"))
-# fig.subplots_adjust(wspace=0.25, hspace=0.20, top=0.85, bottom=0.05)
-
-# ax.set_ylim(0, 20)
-# ax.set_rgrids([5, 10, 15, 20])
-
-
-# ax.set_varlabels(spoke_labels)
-
-
-# case_data = data[0]
-# case_name = case_data[0]
-# all_data = np.array(case_data[1])
-
-# colors = ["b", "r", "g"]
-# labels = ["Line 1", "Line 2", "Line 3"]
-
-# for d, color, label in zip(all_data, colors, labels):
-#     ax.plot(theta, d, color=color, label=label)
-#     ax.fill(theta, d, color=color, alpha=0.25)
-
-# ax.legend(loc="upper right", bbox_to_anchor=(0.1, 0.1))
-
-# plt.show()
+    return buffer

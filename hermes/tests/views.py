@@ -626,11 +626,17 @@ def recalculate_scores_view(request):
     # First recalculate all scores
     recalculate_scores(request)
 
-    # Get all test results for the user's team
+    # Get user's teams and active test
     user_teams = request.user.teams.all()
-    test_results = TestResult.objects.filter(profile__team__in=user_teams).order_by(
-        "profile__surname"
-    )
+    active_test = ActiveTest.objects.filter(is_active=True, team__in=user_teams).first()
+
+    if active_test:
+        # Get test results only for the active test and user's teams
+        test_results = TestResult.objects.filter(
+            profile__team__in=user_teams, active_test=active_test
+        ).order_by("profile__surname")
+    else:
+        test_results = TestResult.objects.none()
 
     return render(request, "recalculate_scores.html", {"test_results": test_results})
 
@@ -640,12 +646,27 @@ def recalculate_scores_view(request):
 def download_radar_plot(request, profile_id):
     test_result = get_object_or_404(TestResult, profile_id=profile_id)
 
+    # Get the last 3 test results for this profile
+    historical_results = TestResult.objects.filter(
+        profile_id=profile_id,
+        active_test=test_result.active_test,
+        team=test_result.team,
+    ).order_by("-test_date")[:3]
+
+    # Remove current test result from historical results if present
+    if test_result in historical_results:
+        historical_results = list(historical_results)
+        historical_results.remove(test_result)
+    else:
+        historical_results = list(historical_results)[1:]  # Take only previous results
+
     # Generate radar plot
     plot_buffer = generate_radar_plot_from_scores(
         test_result.speed_score or 0,
         test_result.endurance_score or 0,
         test_result.agility_score or 0,
         test_result.strength_score or 0,
+        historical_results=historical_results,
     )
 
     # Create response
@@ -680,8 +701,8 @@ def download_pdf_report(request, profile_id):
     # Create a BytesIO buffer to receive PDF data
     buffer = BytesIO()
 
-    # Generate the PDF
-    generate_test_results_pdf(test_result, buffer)
+    # Generate the PDF, passing the current user as adjudicator
+    generate_test_results_pdf(test_result, buffer, request.user)
 
     # Create the HTTP response with PDF mime type
     buffer.seek(0)
@@ -697,15 +718,14 @@ def download_pdf_report(request, profile_id):
 @login_required
 @user_passes_test(is_adjudicator)
 def download_all_pdf_reports(request):
-    # Download a combined PDF containing all test results.
     # Get all test results ordered by surname
     test_results = TestResult.objects.all().order_by("profile__surname")
 
     # Create a BytesIO buffer to receive PDF data
     buffer = BytesIO()
 
-    # Generate the PDF with all results
-    generate_test_results_pdf(list(test_results), buffer)
+    # Generate the PDF with all results, passing the current user as adjudicator
+    generate_test_results_pdf(list(test_results), buffer, request.user)
 
     # Create the HTTP response with PDF mime type
     buffer.seek(0)
