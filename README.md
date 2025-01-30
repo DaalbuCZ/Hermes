@@ -1,13 +1,18 @@
 # HERMES
+
 ## **H**igh **E**fficiency **R**ecording and **M**anagement **E**valuation **S**ystem
 
+A website to help my dance club manage the results of the physical testings done every year. The website is using Django fully, with dynamic features done by unicorn. I've setup an account for you.
+
+username: `hacker` password: `hackclub`
+
+Try out creating a new profile and addidg some test result to it. You are welcome to try to break the site (I want to see if it holds up :D).
 
 ## Prerequisites
 
 - Python installed
 - PostgreSQL installed
-- Git (if cloning from a repository)
-- Basic understanding of Django and Python
+- Git (so you can clone the repo)
 
 ## Steps to Set Up the Project
 
@@ -66,8 +71,3 @@ python manage.py runserver
 
 Access your site at `http://localhost:8000`
 and admin dashboard at `http://localhost:8000/admin`
-
-## Additional Considerations
-
-- Check if any environment-specific settings need to be adjusted.
-
