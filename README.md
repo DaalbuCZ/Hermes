@@ -8,6 +8,8 @@ username: `hacker` password: `hackclub`
 
 Try out creating a new profile and addidg some test result to it. You are welcome to try to break the site (I want to see if it holds up :D).
 
+Also this is technically an update because I've started slightly before high seas but basically everything you see was done during the event.
+
 ## Prerequisites
 
 - Python installed
