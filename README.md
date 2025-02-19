@@ -2,13 +2,7 @@
 
 ## **H**igh **E**fficiency **R**ecording and **M**anagement **E**valuation **S**ystem
 
-A website to help my dance club manage the results of the physical testings done every year. The website is using Django fully, with dynamic features done by unicorn. I've setup an account for you.
-
-username: `hacker` password: `hackclub`
-
-Try out creating a new profile and addidg some test result to it. You are welcome to try to break the site (I want to see if it holds up :D).
-
-Also this is technically an update because I've started slightly before high seas but basically everything you see was done during the event.
+A website to help my dance club manage the results of the physical testings done every year. The website is using Django fully, with dynamic features done by unicorn.
 
 ## Prerequisites
 
@@ -73,3 +67,5 @@ python manage.py runserver
 
 Access your site at `http://localhost:8000`
 and admin dashboard at `http://localhost:8000/admin`
+
+### Make sure you have the database correctly setup
