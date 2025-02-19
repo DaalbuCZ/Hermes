@@ -51,6 +51,7 @@ def is_adjudicator(user):
 @user_passes_test(is_adjudicator)
 def test_results(request):
     profiles = Profile.objects.all().order_by("surname")
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
 
     # Create a list of dictionaries containing profile information and test results
     results = []
@@ -121,6 +122,7 @@ def edit_profile(request, profile_id):
 @user_passes_test(is_adjudicator)
 def profile_list(request):
     profiles = Profile.objects.all().order_by("surname")
+    profiles = Profile.objects.filter(team__in=request.user.teams.all())
     return render(request, "profile_list.html", {"profiles": profiles})
 
 
