@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "tests",
     "widget_tweaks",
+    "ninja",  # Add this line
 ]
 
 MIDDLEWARE = [
