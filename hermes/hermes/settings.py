@@ -46,10 +46,12 @@ INSTALLED_APPS = [
     "tests",
     "widget_tweaks",
     "ninja",  # Add this line
+    "corsheaders",  # Add this line
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # Add this line - make sure it's at the top
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -149,3 +151,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = "/tests/adjudicator_dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
+
+# Add CORS settings
+CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_CREDENTIALS = True
+
+# For production, specify the exact origins:
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:5173",  # React dev server
+# ]

@@ -29,8 +29,8 @@ class Profile(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     date_of_birth = models.DateField()
-    weight = models.IntegerField()
-    height = models.IntegerField()
+    weight = models.FloatField()
+    height = models.FloatField()
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(
         "auth.User",
