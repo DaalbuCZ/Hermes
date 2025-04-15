@@ -148,20 +148,6 @@ class Profile(models.Model):
 
 class TestResult(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    active_test = models.ForeignKey(ActiveTest, on_delete=models.CASCADE)
-    ladder_time_1 = models.FloatField(null=True, blank=True)
-    ladder_time_2 = models.FloatField(null=True, blank=True)
-    ladder_score = models.FloatField(null=True, blank=True)
-    test_name = models.CharField(max_length=255, null=True, blank=True)
-    test_date = models.DateField(null=True, blank=True)
-    team = models.CharField(max_length=255, null=True, blank=True)
-
-    class Meta:
-        unique_together = ("profile", "active_test")
-
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
-    test_date = models.DateField(auto_now_add=True)
-    test_name = models.CharField(max_length=100, null=True, blank=True)
     active_test = models.ForeignKey(
         ActiveTest,
         on_delete=models.SET_NULL,
@@ -169,7 +155,17 @@ class TestResult(models.Model):
         blank=True,
         related_name="test_results",
     )
+    test_date = models.DateField(auto_now_add=True)
+    test_name = models.CharField(max_length=100, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # Composite scores
+    strength_score = models.FloatField(null=True, blank=True)
+    speed_score = models.FloatField(null=True, blank=True)
+    endurance_score = models.FloatField(null=True, blank=True)
+    agility_score = models.FloatField(null=True, blank=True)
+
+    # Test specific fields
     ladder_score = models.IntegerField(default=0)
     ladder_time_1 = models.FloatField(null=True, blank=True)
     ladder_time_2 = models.FloatField(null=True, blank=True)
@@ -217,15 +213,6 @@ class TestResult(models.Model):
     beep_test_laps = models.IntegerField(null=True, blank=True)
     beep_test_total_laps = models.IntegerField(null=True, blank=True)
     max_hr = models.IntegerField(null=True, blank=True)
-
-    strength_score = models.FloatField(null=True, blank=True)
-    # medicimbal_score + triple_jump_score /2
-    speed_score = models.FloatField(null=True, blank=True)
-    # ladder_score + hexagon_score /2
-    endurance_score = models.FloatField(null=True, blank=True)
-    # beep_test_score + jet_score /2
-    agility_score = models.FloatField(null=True, blank=True)
-    # brace_score + y_test_score /2
 
     def __str__(self):
         return f"{self.profile.surname} {self.profile.name} - {self._meta.model_name}"

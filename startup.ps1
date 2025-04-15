@@ -1,3 +1,6 @@
+# Activate the virtual environment
+.\olympvenv\Scripts\Activate.ps1
+
 # Navigate to the hermes directory
 Set-Location -Path "hermes"
 
