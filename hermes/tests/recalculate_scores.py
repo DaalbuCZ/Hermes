@@ -10,9 +10,9 @@ from django.contrib import messages
 from django.shortcuts import redirect
 
 
-def recalculate_scores(request):
+def recalculate_scores(user):
     # Get all TestResult objects for the user's team
-    user_teams = request.user.teams.all()
+    user_teams = user.teams.all()
     test_results = TestResult.objects.filter(profile__team__in=user_teams)
 
     # Recalculate scores for each test result
@@ -200,5 +200,3 @@ def recalculate_scores(request):
 
         test_result.save()
 
-    messages.success(request, "Scores recalculated successfully!")
-    return redirect("results")

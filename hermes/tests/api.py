@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 # Add this import
 from .score_tables import calculate_score, calculate_beep_test_total_laps, calculate_y_test_index
+from django.contrib.auth.models import Group
 
 SECRET_KEY = settings.SECRET_KEY
 
@@ -142,6 +143,14 @@ class UserSchema(Schema):
     teams: List[int]  # List of team IDs
 
 
+# Schema for creating a new adjudicator
+class AdjudicatorSchema(Schema):
+    username: str
+    password: str
+    first_name: str
+    last_name: str
+
+
 # Auth endpoints
 @api.post("/token", auth=None, response=TokenSchema)
 def get_token(request, auth_data: AuthSchema):
@@ -176,7 +185,16 @@ def get_profile(request, profile_id: int):
 
 @api.get("/results", response=List[TestResultSchema])
 def get_test_results(request):
-    return TestResult.objects.all()
+    results = TestResult.objects.all()
+    # Serialize team as string (team name) for each result
+    serialized = []
+    for r in results:
+        d = r.__dict__.copy()
+        d["team"] = r.team.name if hasattr(r, "team") and r.team else None
+        d["profile_id"] = r.profile.id if hasattr(r, "profile") and r.profile else None
+        d["test_date"] = r.test_date
+        serialized.append(d)
+    return serialized
 
 
 @api.get("/results/{profile_id}", response=List[TestResultSchema])
@@ -375,6 +393,40 @@ def update_user_teams(request, team_ids: List[int]):
     user = request.auth
     user.teams.set(team_ids)
     return user
+
+
+@api.post("/users/adjudicators", response=UserSchema)
+def add_adjudicator(request, adjudicator: AdjudicatorSchema):
+    username = adjudicator.username
+    password = adjudicator.password
+    first_name = adjudicator.first_name
+    last_name = adjudicator.last_name
+    if not (username and password and first_name and last_name):
+        return api.create_response(request, {"detail": "Missing fields"}, status=400)
+    if User.objects.filter(username=username).exists():
+        return api.create_response(request, {"detail": "Username already exists"}, status=400)
+    user = User.objects.create_user(
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        is_active=True,
+    )
+    group, _ = Group.objects.get_or_create(name="Adjudicators")
+    user.groups.add(group)
+    user.save()
+    return user
+
+
+@api.delete("/users/adjudicators/{id}")
+def delete_adjudicator(request, id: int):
+    """Delete an adjudicator by ID"""
+    user = get_object_or_404(User, id=id)
+    group = Group.objects.get(name="Adjudicators")
+    if group in user.groups.all():
+        user.delete()
+        return {"success": True}
+    return api.create_response(request, {"detail": "User is not an adjudicator"}, status=400)
 
 
 # Test type specific endpoints
@@ -955,3 +1007,14 @@ def save_beep_test(request, profile_id: int, data: dict = Body(...)):
             {"detail": str(e)},
             status=422
         )
+
+@api.post("/recalculate-scores")
+def recalculate_scores_api(request):
+    """Recalculate all scores for the current user's teams (or all if superuser)"""
+    from .recalculate_scores import recalculate_scores
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    # request.auth is the username string from AuthBearer
+    user = User.objects.get(username=request.auth)
+    recalculate_scores(user)
+    return {"success": True, "message": "Scores recalculated successfully."}
