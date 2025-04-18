@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 # Add this import
 from .score_tables import calculate_score, calculate_beep_test_total_laps, calculate_y_test_index
 from django.contrib.auth.models import Group
+from django.contrib.auth.decorators import user_passes_test
 
 SECRET_KEY = settings.SECRET_KEY
 
@@ -21,7 +22,11 @@ class AuthBearer(HttpBearer):
             payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
             username = payload.get("username")
             if username:
-                return username
+                try:
+                    user = User.objects.get(username=username)
+                    return user  # Return the full User object
+                except User.DoesNotExist:
+                    return None
         except jwt.PyJWTError:
             return None
 
@@ -123,7 +128,7 @@ class TestResultSchema(Schema):
 class TeamSchema(Schema):
     id: int
     name: str
-    created_at: date
+    created_at: datetime
 
 
 # Additional schemas
@@ -140,7 +145,9 @@ class UserSchema(Schema):
     id: int
     username: str
     is_active: bool
+    is_superuser: bool  # Add superuser status
     teams: List[int]  # List of team IDs
+    groups: List[str]  # Add group names
 
 
 # Schema for creating a new adjudicator
@@ -149,6 +156,10 @@ class AdjudicatorSchema(Schema):
     password: str
     first_name: str
     last_name: str
+
+
+def is_superadmin(user):
+    return user.is_superuser
 
 
 # Auth endpoints
@@ -204,6 +215,8 @@ def get_profile_results(request, profile_id: int):
 
 @api.get("/teams", response=List[TeamSchema])
 def get_teams(request):
+    if not request.auth or not request.auth.is_superuser:
+        return api.create_response(request, {"detail": "Not authorized"}, status=403)
     return Team.objects.all()
 
 
@@ -265,11 +278,15 @@ def delete_test_result(request, result_id: int):
 # Team management endpoints
 @api.post("/teams", response=TeamSchema)
 def create_team(request, team: TeamSchema):
+    if not request.auth or not request.auth.is_superuser:
+        return api.create_response(request, {"detail": "Not authorized"}, status=403)
     return Team.objects.create(**team.dict())
 
 
 @api.put("/team/{team_id}", response=TeamSchema)
 def update_team(request, team_id: int, team: TeamSchema):
+    if not request.auth or not request.auth.is_superuser:
+        return api.create_response(request, {"detail": "Not authorized"}, status=403)
     team_obj = get_object_or_404(Team, id=team_id)
     for key, value in team.dict(exclude_unset=True).items():
         setattr(team_obj, key, value)
@@ -279,6 +296,8 @@ def update_team(request, team_id: int, team: TeamSchema):
 
 @api.delete("/team/{team_id}")
 def delete_team(request, team_id: int):
+    if not request.auth or not request.auth.is_superuser:
+        return api.create_response(request, {"detail": "Not authorized"}, status=403)
     team = get_object_or_404(Team, id=team_id)
     team.delete()
     return {"success": True}
@@ -383,8 +402,17 @@ def get_adjudicators(request):
 
 @api.get("/users/me", response=UserSchema)
 def get_current_user(request):
-    """Get current user's information"""
-    return request.auth
+    user = request.auth
+    if user:
+        return UserSchema(
+            id=user.id,
+            username=user.username,
+            is_active=user.is_active,
+            is_superuser=user.is_superuser,
+            teams=[],  # Replace with empty list if no M2M exists
+            groups=[group.name for group in user.groups.all()],
+        )
+    return api.create_response(request, {"detail": "Not authenticated"}, status=401)
 
 
 @api.put("/users/me/teams", response=UserSchema)
