@@ -53,6 +53,7 @@ class ProfileSchema(Schema):
     gender: str
     height: float
     weight: float
+    team_id: int | None  # <-- Add this line
 
 
 class TestResultSchema(Schema):
@@ -1046,3 +1047,32 @@ def recalculate_scores_api(request):
     user = User.objects.get(username=request.auth)
     recalculate_scores(user)
     return {"success": True, "message": "Scores recalculated successfully."}
+
+@api.get("/results/profile/{profile_id}/active-test/{active_test_id}", response=TestResultSchema)
+def get_profile_active_test_result(request, profile_id: int, active_test_id: int):
+    """Get the latest test result for a specific profile and active test"""
+    try:
+        result = TestResult.objects.filter(
+            profile_id=profile_id,
+            active_test_id=active_test_id
+        ).order_by('-test_date').first()
+        
+        if not result:
+            return api.create_response(
+                request,
+                {"detail": "No test result found for this profile and active test"},
+                status=404
+            )
+            
+        from django.forms.models import model_to_dict
+        response_data = model_to_dict(result)
+        response_data["team"] = result.team.name if result.team else None
+        response_data["profile_id"] = result.profile.id
+        response_data["test_date"] = result.test_date
+        return response_data
+    except Exception as e:
+        return api.create_response(
+            request,
+            {"detail": str(e)},
+            status=422
+        )
