@@ -348,7 +348,7 @@ def get_active_tests(request):
 @api.get("/active-tests/{team_id}", response=List[ActiveTestSchema])
 def get_team_active_tests(request, team_id: int):
     """Get active tests for a specific team"""
-    return ActiveTest.objects.filter(team_id=team_id)
+    return ActiveTest.objects.filter(team_id=team_id, is_active=True)
 
 
 @api.post("/active-tests", response=ActiveTestSchema)
@@ -410,7 +410,7 @@ def get_current_user(request):
             username=user.username,
             is_active=user.is_active,
             is_superuser=user.is_superuser,
-            teams=[],  # Replace with empty list if no M2M exists
+            teams=[team.id for team in user.teams.all()],
             groups=[group.name for group in user.groups.all()],
         )
     return api.create_response(request, {"detail": "Not authenticated"}, status=401)
