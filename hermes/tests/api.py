@@ -584,9 +584,13 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
     # print(f"Received ladder test data: {data}")
     # print(f"Data types - time1: {type(data.get('ladder_time_1'))}, time2: {type(data.get('ladder_time_2'))}")
     try:
-        if not isinstance(data.get("ladder_time_1"), (int, float)) or not isinstance(data.get("ladder_time_2"), (int, float)):
+        if (
+            (data.get("ladder_time_1") is not None and not isinstance(data.get("ladder_time_1"), (int, float)))
+            or
+            (data.get("ladder_time_2") is not None and not isinstance(data.get("ladder_time_2"), (int, float)))
+        ):
             return api.create_response(
-                request, {"detail": "Invalid times - both times must be numbers"}, status=422
+                request, {"detail": "Invalid times - each time must be a number or null"}, status=422
             )
 
         profile = get_object_or_404(Profile, id=profile_id)
@@ -653,6 +657,15 @@ def save_brace_test(request, profile_id: int, data: dict = Body(...)):
             request, {"detail": "No active test found for this profile's team"}, status=400
         )
     
+    if (
+        (data.get("brace_time_1") is not None and not isinstance(data.get("brace_time_1"), (int, float)))
+        or
+        (data.get("brace_time_2") is not None and not isinstance(data.get("brace_time_2"), (int, float)))
+    ):
+        return api.create_response(
+            request, {"detail": "Invalid times - each time must be a number or null"}, status=422
+        )
+
     test_result, created = TestResult.objects.update_or_create(
         profile=profile,
         active_test=active_test,
@@ -682,9 +695,13 @@ def save_brace_test(request, profile_id: int, data: dict = Body(...)):
 @api.post("/hexagon-test/{profile_id}", response=TestResultSchema)
 def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
     try:
-        if not isinstance(data.get("hexagon_time_cw"), (int, float)) or not isinstance(data.get("hexagon_time_ccw"), (int, float)):
+        if (
+            (data.get("hexagon_time_cw") is not None and not isinstance(data.get("hexagon_time_cw"), (int, float)))
+            or
+            (data.get("hexagon_time_ccw") is not None and not isinstance(data.get("hexagon_time_ccw"), (int, float)))
+        ):
             return api.create_response(
-                request, {"detail": "Invalid times - both times must be numbers"}, status=422
+                request, {"detail": "Invalid times - each time must be a number or null"}, status=422
             )
         profile = get_object_or_404(Profile, id=profile_id)
         active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
@@ -819,10 +836,12 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
 @api.post("/medicimbal-test/{profile_id}", response=TestResultSchema)
 def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
     try:
-        if not all(isinstance(data.get(f"medicimbal_throw_{i}"), (int, float)) for i in [1,2,3]):
-            return api.create_response(
-                request, {"detail": "All throws must be numbers"}, status=422
-            )
+        for i in [1, 2, 3]:
+            val = data.get(f"medicimbal_throw_{i}")
+            if val is not None and not isinstance(val, (int, float)):
+                return api.create_response(
+                    request, {"detail": f"Throw {i} must be a number or null"}, status=422
+                )
         profile = get_object_or_404(Profile, id=profile_id)
         active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
         if not active_test:
@@ -929,10 +948,12 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
 @api.post("/triple-jump-test/{profile_id}", response=TestResultSchema)
 def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
     try:
-        if not all(isinstance(data.get(f"triple_jump_distance_{i}"), (int, float)) for i in [1,2,3]):
-            return api.create_response(
-                request, {"detail": "All jump distances must be numbers"}, status=422
-            )
+        for i in [1, 2, 3]:
+            val = data.get(f"triple_jump_distance_{i}")
+            if val is not None and not isinstance(val, (int, float)):
+                return api.create_response(
+                    request, {"detail": f"Jump distance {i} must be a number or null"}, status=422
+                )
         profile = get_object_or_404(Profile, id=profile_id)
         active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
         if not active_test:
@@ -1076,3 +1097,26 @@ def get_profile_active_test_result(request, profile_id: int, active_test_id: int
             {"detail": str(e)},
             status=422
         )
+
+@api.get("/results/profile/{profile_id}/test-type/{test_type}", response=TestResultSchema)
+def get_latest_profile_test_type_result(request, profile_id: int, test_type: str):
+    """Get the latest test result for a specific profile and test type"""
+    field_name = f"{test_type}_score"
+    result = (
+        TestResult.objects.filter(profile_id=profile_id)
+        .exclude(**{field_name: None})
+        .order_by("-test_date")
+        .first()
+    )
+    if not result:
+        return api.create_response(
+            request,
+            {"detail": "No test result found for this profile and test type"},
+            status=404
+        )
+    from django.forms.models import model_to_dict
+    response_data = model_to_dict(result)
+    response_data["team"] = result.team.name if result.team else None
+    response_data["profile_id"] = result.profile.id
+    response_data["test_date"] = result.test_date
+    return response_data

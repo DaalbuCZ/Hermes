@@ -12,3 +12,6 @@
 /Olymp.code-workspace
 /hermes/tests/migrations/__pycache__
 /hermes/static
+/.cursor
+/.cursor/rules
+/.cursor/rules/stack.mdc
