@@ -54,6 +54,7 @@ class ProfileSchema(Schema):
     height: float
     weight: float
     team_id: int | None  # <-- Add this line
+    age: int  # <-- Add this line
 
 
 class TestResultSchema(Schema):
@@ -187,7 +188,21 @@ def get_token(request, auth_data: AuthSchema):
 # Existing endpoints
 @api.get("/profiles", response=List[ProfileSchema])
 def get_profiles(request):
-    return Profile.objects.all()
+    # Return each profile as a dict with age
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "surname": p.surname,
+            "date_of_birth": p.date_of_birth,
+            "gender": p.gender,
+            "height": p.height,
+            "weight": p.weight,
+            "team_id": p.team.id if p.team else None,
+            "age": p.age,
+        }
+        for p in Profile.objects.all()
+    ]
 
 
 @api.get("/profile/{profile_id}", response=ProfileSchema)
