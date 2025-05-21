@@ -1,5 +1,5 @@
 from ninja import NinjaAPI, Schema, Body  # Add this import
-from typing import List
+from typing import List, Optional
 from datetime import date, datetime, timedelta
 from .models import Profile, TestResult, ActiveTest, Team
 from django.shortcuts import get_object_or_404
@@ -53,8 +53,8 @@ class ProfileSchema(Schema):
     gender: str
     height: float
     weight: float
-    team_id: int | None  # <-- Add this line
-    age: int  # <-- Add this line
+    team_id: int | None = None  # Optional for input
+    age: int | None = None      # Optional for input
 
 
 class TestResultSchema(Schema):
@@ -244,7 +244,12 @@ def get_team_results(request, team_id: int):
 # Profile endpoints
 @api.post("/profiles", response=ProfileSchema)
 def create_profile(request, profile: ProfileSchema):
-    profile_data = profile.dict(exclude={"id"})  # Exclude id when creating
+    profile_data = profile.dict(exclude={"id", "age", "team_id"})  # Exclude id, age, team_id from input
+    # Set team_id from the authenticated user if available
+    team_id = None
+    if hasattr(request.auth, "teams") and request.auth.teams.exists():
+        team_id = request.auth.teams.first().id
+    profile_data["team_id"] = team_id
     return Profile.objects.create(**profile_data)
 
 
@@ -1016,62 +1021,78 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/beep-test/{profile_id}", response=TestResultSchema)
-def save_beep_test(request, profile_id: int, data: dict = Body(...)):
-    try:
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
-        if not active_test:
-            return api.create_response(
-                request, {"detail": "No active test found for this profile's team"}, status=400
+class BeepTestBatchItem(Schema):
+    profile_id: int
+    beep_test_level: int
+    beep_test_laps: int
+    max_hr: Optional[int] = None
+
+class BeepTestBatchResponse(Schema):
+    profile_id: int
+    success: bool
+    result: Optional[TestResultSchema] = None
+    error: Optional[str] = None
+
+@api.post("/beep-test/batch", response=List[BeepTestBatchResponse])
+def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
+    responses = []
+    for item in items:
+        try:
+            profile = get_object_or_404(Profile, id=item.profile_id)
+            active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+            if not active_test:
+                responses.append(BeepTestBatchResponse(
+                    profile_id=item.profile_id,
+                    success=False,
+                    error="No active test found for this profile's team"
+                ))
+                continue
+            beep_test_total_laps = calculate_beep_test_total_laps(item.beep_test_level, item.beep_test_laps)
+            beep_test_score = calculate_score(
+                profile.age,
+                profile.gender,
+                "beep_test",
+                beep_test_total_laps
             )
-        beep_test_level = data.get("beep_test_level")
-        beep_test_laps = data.get("beep_test_laps")
-        max_hr = data.get("max_hr")
-        if beep_test_level is None or beep_test_laps is None:
-            return api.create_response(
-                request, {"detail": "beep_test_level and beep_test_laps are required"}, status=422
+            if beep_test_score is None:
+                responses.append(BeepTestBatchResponse(
+                    profile_id=item.profile_id,
+                    success=False,
+                    error="Invalid beep test values - check input data"
+                ))
+                continue
+            test_result, created = TestResult.objects.update_or_create(
+                profile=profile,
+                active_test=active_test,
+                defaults={
+                    "beep_test_level": item.beep_test_level,
+                    "beep_test_laps": item.beep_test_laps,
+                    "beep_test_total_laps": beep_test_total_laps,
+                    "max_hr": item.max_hr,
+                    "beep_test_score": beep_test_score,
+                    "test_name": active_test.name,
+                    "test_date": date.today(),
+                    "team": active_test.team,
+                }
             )
-        beep_test_total_laps = calculate_beep_test_total_laps(beep_test_level, beep_test_laps)
-        beep_test_score = calculate_score(
-            profile.age,
-            profile.gender,
-            "beep_test",
-            beep_test_total_laps
-        )
-        if beep_test_score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid beep test values - check input data"},
-                status=422
-            )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "beep_test_level": beep_test_level,
-                "beep_test_laps": beep_test_laps,
-                "beep_test_total_laps": beep_test_total_laps,
-                "max_hr": max_hr,
-                "beep_test_score": beep_test_score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
-        )
-        test_result.save()
-        from django.forms.models import model_to_dict
-        response_data = model_to_dict(test_result)
-        response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
-        response_data["test_date"] = test_result.test_date
-        return response_data
-    except Exception as e:
-        return api.create_response(
-            request,
-            {"detail": str(e)},
-            status=422
-        )
+            test_result.save()
+            from django.forms.models import model_to_dict
+            response_data = model_to_dict(test_result)
+            response_data["team"] = test_result.team.name if test_result.team else None
+            response_data["profile_id"] = test_result.profile.id
+            response_data["test_date"] = test_result.test_date
+            responses.append(BeepTestBatchResponse(
+                profile_id=item.profile_id,
+                success=True,
+                result=response_data
+            ))
+        except Exception as e:
+            responses.append(BeepTestBatchResponse(
+                profile_id=item.profile_id,
+                success=False,
+                error=str(e)
+            ))
+    return responses
 
 @api.post("/recalculate-scores")
 def recalculate_scores_api(request):
@@ -1135,3 +1156,16 @@ def get_latest_profile_test_type_result(request, profile_id: int, test_type: str
     response_data["profile_id"] = result.profile.id
     response_data["test_date"] = result.test_date
     return response_data
+
+class ProfileIdsSchema(Schema):
+    profile_ids: list[int]
+
+@api.post("/beep-test/has-results", response=dict)
+def beep_test_has_results(request, data: ProfileIdsSchema):
+    result = {}
+    for pid in data.profile_ids:
+        has_result = TestResult.objects.filter(
+            profile_id=pid
+        ).exclude(beep_test_score=None).exists()
+        result[pid] = has_result
+    return result
