@@ -1,5 +1,5 @@
 from ninja import NinjaAPI, Schema, Body  # Add this import
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import date, datetime, timedelta
 from .models import Profile, TestResult, ActiveTest, Team
 from django.shortcuts import get_object_or_404
@@ -1168,4 +1168,26 @@ def beep_test_has_results(request, data: ProfileIdsSchema):
             profile_id=pid
         ).exclude(beep_test_score=None).exists()
         result[pid] = has_result
+    return result
+
+@api.post("/beep-test/batch-latest", response=Dict[int, TestResultSchema | None])
+def beep_test_batch_latest(request, data: ProfileIdsSchema):
+    result = {}
+    for pid in data.profile_ids:
+        field_name = "beep_test_score"
+        latest = (
+            TestResult.objects.filter(profile_id=pid)
+            .exclude(**{field_name: None})
+            .order_by("-test_date")
+            .first()
+        )
+        if latest:
+            from django.forms.models import model_to_dict
+            response_data = model_to_dict(latest)
+            response_data["team"] = latest.team.name if latest.team else None
+            response_data["profile_id"] = latest.profile.id
+            response_data["test_date"] = latest.test_date
+            result[pid] = response_data
+        else:
+            result[pid] = None
     return result
