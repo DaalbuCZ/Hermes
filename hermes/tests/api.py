@@ -250,7 +250,14 @@ def create_profile(request, profile: ProfileSchema):
     if hasattr(request.auth, "teams") and request.auth.teams.exists():
         team_id = request.auth.teams.first().id
     profile_data["team_id"] = team_id
-    return Profile.objects.create(**profile_data)
+    new_profile = Profile.objects.create(**profile_data)
+    # Find the active test for the new profile's team
+    active_test = None
+    if new_profile.team:
+        active_test = ActiveTest.objects.filter(is_active=True, team=new_profile.team).first()
+    # Create a blank TestResult for the new profile, with the active test if available
+    TestResult.objects.create(profile=new_profile, team=new_profile.team, active_test=active_test)
+    return new_profile
 
 
 @api.put("/profile/{profile_id}", response=ProfileSchema)
@@ -639,17 +646,15 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
 
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "ladder_time_1": data.get("ladder_time_1"),
-                "ladder_time_2": data.get("ladder_time_2"),
-                "ladder_score": score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            ladder_time_1=data.get("ladder_time_1"),
+            ladder_time_2=data.get("ladder_time_2"),
+            ladder_score=score,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
 
         test_result.save()
@@ -686,23 +691,21 @@ def save_brace_test(request, profile_id: int, data: dict = Body(...)):
             request, {"detail": "Invalid times - each time must be a number or null"}, status=422
         )
 
-    test_result, created = TestResult.objects.update_or_create(
-        profile=profile,
-        active_test=active_test,
-        defaults={
-            "brace_time_1": data.get("brace_time_1"),
-            "brace_time_2": data.get("brace_time_2"),
-            "brace_score": calculate_score(
-                profile.age,
-                profile.gender,
-                "brace",
-                data.get("brace_time_1"),
-                data.get("brace_time_2")
-            ),
-            "test_name": active_test.name,
-            "test_date": date.today(),
-            "team": active_test.team,
-        }
+    test_result = get_or_create_test_result(
+        profile,
+        active_test,
+        brace_time_1=data.get("brace_time_1"),
+        brace_time_2=data.get("brace_time_2"),
+        brace_score=calculate_score(
+            profile.age,
+            profile.gender,
+            "brace",
+            data.get("brace_time_1"),
+            data.get("brace_time_2")
+        ),
+        test_name=active_test.name,
+        test_date=date.today(),
+        team=active_test.team,
     )
     test_result.save()
     from django.forms.models import model_to_dict
@@ -742,17 +745,15 @@ def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
                 {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
                 status=422
             )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "hexagon_time_cw": data.get("hexagon_time_cw"),
-                "hexagon_time_ccw": data.get("hexagon_time_ccw"),
-                "hexagon_score": score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            hexagon_time_cw=data.get("hexagon_time_cw"),
+            hexagon_time_ccw=data.get("hexagon_time_ccw"),
+            hexagon_score=score,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -816,28 +817,26 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
                 {"detail": "Invalid Y test values - check input data"},
                 status=422
             )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "y_test_ll_front": data.get("y_test_ll_front"),
-                "y_test_ll_left": data.get("y_test_ll_left"),
-                "y_test_ll_right": data.get("y_test_ll_right"),
-                "y_test_rl_front": data.get("y_test_rl_front"),
-                "y_test_rl_left": data.get("y_test_rl_left"),
-                "y_test_rl_right": data.get("y_test_rl_right"),
-                "y_test_la_left": data.get("y_test_la_left"),
-                "y_test_la_front": data.get("y_test_la_front"),
-                "y_test_la_back": data.get("y_test_la_back"),
-                "y_test_ra_right": data.get("y_test_ra_right"),
-                "y_test_ra_front": data.get("y_test_ra_front"),
-                "y_test_ra_back": data.get("y_test_ra_back"),
-                "y_test_score": y_test_score,
-                "y_test_index": y_test_index,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            y_test_ll_front=data.get("y_test_ll_front"),
+            y_test_ll_left=data.get("y_test_ll_left"),
+            y_test_ll_right=data.get("y_test_ll_right"),
+            y_test_rl_front=data.get("y_test_rl_front"),
+            y_test_rl_left=data.get("y_test_rl_left"),
+            y_test_rl_right=data.get("y_test_rl_right"),
+            y_test_la_left=data.get("y_test_la_left"),
+            y_test_la_front=data.get("y_test_la_front"),
+            y_test_la_back=data.get("y_test_la_back"),
+            y_test_ra_right=data.get("y_test_ra_right"),
+            y_test_ra_front=data.get("y_test_ra_front"),
+            y_test_ra_back=data.get("y_test_ra_back"),
+            y_test_score=y_test_score,
+            y_test_index=y_test_index,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -882,18 +881,16 @@ def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
                 {"detail": "Invalid throws - they must be within valid ranges for the athlete's age"},
                 status=422
             )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "medicimbal_throw_1": data.get("medicimbal_throw_1"),
-                "medicimbal_throw_2": data.get("medicimbal_throw_2"),
-                "medicimbal_throw_3": data.get("medicimbal_throw_3"),
-                "medicimbal_score": score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            medicimbal_throw_1=data.get("medicimbal_throw_1"),
+            medicimbal_throw_2=data.get("medicimbal_throw_2"),
+            medicimbal_throw_3=data.get("medicimbal_throw_3"),
+            medicimbal_score=score,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -938,18 +935,16 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
                 {"detail": "Invalid jet test values - check input data"},
                 status=422
             )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "jet_laps": jet_laps,
-                "jet_sides": jet_sides,
-                "jet_distance": jet_distance,
-                "jet_score": score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            jet_laps=jet_laps,
+            jet_sides=jet_sides,
+            jet_distance=jet_distance,
+            jet_score=score,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -994,18 +989,16 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
                 {"detail": "Invalid jump distances - they must be within valid ranges for the athlete's age"},
                 status=422
             )
-        test_result, created = TestResult.objects.update_or_create(
-            profile=profile,
-            active_test=active_test,
-            defaults={
-                "triple_jump_distance_1": data.get("triple_jump_distance_1"),
-                "triple_jump_distance_2": data.get("triple_jump_distance_2"),
-                "triple_jump_distance_3": data.get("triple_jump_distance_3"),
-                "triple_jump_score": score,
-                "test_name": active_test.name,
-                "test_date": date.today(),
-                "team": active_test.team,
-            }
+        test_result = get_or_create_test_result(
+            profile,
+            active_test,
+            triple_jump_distance_1=data.get("triple_jump_distance_1"),
+            triple_jump_distance_2=data.get("triple_jump_distance_2"),
+            triple_jump_distance_3=data.get("triple_jump_distance_3"),
+            triple_jump_score=score,
+            test_name=active_test.name,
+            test_date=date.today(),
+            team=active_test.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -1061,19 +1054,17 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
                     error="Invalid beep test values - check input data"
                 ))
                 continue
-            test_result, created = TestResult.objects.update_or_create(
-                profile=profile,
-                active_test=active_test,
-                defaults={
-                    "beep_test_level": item.beep_test_level,
-                    "beep_test_laps": item.beep_test_laps,
-                    "beep_test_total_laps": beep_test_total_laps,
-                    "max_hr": item.max_hr,
-                    "beep_test_score": beep_test_score,
-                    "test_name": active_test.name,
-                    "test_date": date.today(),
-                    "team": active_test.team,
-                }
+            test_result = get_or_create_test_result(
+                profile,
+                active_test,
+                beep_test_level=item.beep_test_level,
+                beep_test_laps=item.beep_test_laps,
+                beep_test_total_laps=beep_test_total_laps,
+                max_hr=item.max_hr,
+                beep_test_score=beep_test_score,
+                test_name=active_test.name,
+                test_date=date.today(),
+                team=active_test.team,
             )
             test_result.save()
             from django.forms.models import model_to_dict
@@ -1145,11 +1136,7 @@ def get_latest_profile_test_type_result(request, profile_id: int, test_type: str
         .first()
     )
     if not result:
-        return api.create_response(
-            request,
-            {"detail": "No test result found for this profile and test type"},
-            status=404
-        )
+        return None  # Return 200 with null
     from django.forms.models import model_to_dict
     response_data = model_to_dict(result)
     response_data["team"] = result.team.name if result.team else None
@@ -1191,3 +1178,16 @@ def beep_test_batch_latest(request, data: ProfileIdsSchema):
         else:
             result[pid] = None
     return result
+
+def get_or_create_test_result(profile, active_test=None, **kwargs):
+    filters = {'profile': profile}
+    if active_test is not None:
+        filters['active_test'] = active_test
+    test_result, created = TestResult.objects.get_or_create(
+        **filters,
+        defaults=kwargs,
+    )
+    if not created:
+        for key, value in kwargs.items():
+            setattr(test_result, key, value)
+    return test_result
