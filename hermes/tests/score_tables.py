@@ -312,9 +312,9 @@ def calculate_score(age, gender, test, *args):
 
         for i, score in enumerate(age_scores):
             if time_best >= score:
-                return i
+                return max(1, i)  # Ensure minimum 1 point
         # If score is lower than the lowest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values below minimum
 
     elif test == "medicimbal" or test == "triple_jump":
         if args[0] is None and args[1] is None and args[2] is None:
@@ -336,18 +336,18 @@ def calculate_score(age, gender, test, *args):
 
         for i, score in enumerate(age_scores):
             if distance_best <= score:
-                return i
+                return max(1, i)  # Ensure minimum 1 point
         # If score is higher than the highest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values above maximum
 
     elif test == "jet" or test == "beep_test":
         distance_best = args[0]
 
         for i, score in enumerate(age_scores):
             if distance_best <= score:
-                return i
+                return max(1, i)  # Ensure minimum 1 point
         # If score is higher than the highest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values above maximum
 
     elif test == "y_test":
         height = args[0]
@@ -358,11 +358,11 @@ def calculate_score(age, gender, test, *args):
         index = math.floor(sum_reach / height / 12 * 100) / 100.0
         for i, score in enumerate(reversed(age_scores)):
             if index > score:
-                return len(age_scores) - i
+                return max(1, len(age_scores) - i)  # Ensure minimum 1 point
             elif index == score:
-                return len(age_scores) - i
+                return max(1, len(age_scores) - i)  # Ensure minimum 1 point
         # If score is higher than the highest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values above maximum
 
     return  # TODO: error handling here
 
@@ -417,18 +417,18 @@ def quick_calculate(age, gender, test, *args):
         time = args[0]
         for i, score in enumerate(age_scores):
             if time >= score:
-                return i
+                return max(1, i)  # Ensure minimum 1 point
         # If score is lower than the lowest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values below minimum
 
     elif test == "medicimbal" or test == "triple_jump":
         distance = args[0]
 
         for i, score in enumerate(age_scores):
             if distance <= score:
-                return i
+                return max(1, i)  # Ensure minimum 1 point
         # If score is higher than the highest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values above maximum
 
     # elif test == "jet" or test == "beep_test":
     #     distance_best = args[0]
@@ -444,11 +444,11 @@ def quick_calculate(age, gender, test, *args):
 
         for i, score in enumerate(reversed(age_scores)):
             if index > score:
-                return len(age_scores) - i
+                return max(1, len(age_scores) - i)  # Ensure minimum 1 point
             elif index == score:
-                return len(age_scores) - i
+                return max(1, len(age_scores) - i)  # Ensure minimum 1 point
         # If score is higher than the highest score in the table
-        return len(age_scores)
+        return 1  # Minimum 1 point for values above maximum
 
     return  # TODO: error handling here
 

@@ -137,6 +137,12 @@ class Person(models.Model):
     def get_latest_test_result(self):
         return TestResult.objects.filter(person=self).order_by("-test_date").first()
 
+    def get_latest_measurement(self):
+        return PersonMeasurement.objects.filter(person=self).order_by("-measurement_date").first()
+
+    def get_measurement_history(self):
+        return PersonMeasurement.objects.filter(person=self).order_by("-measurement_date")
+
     def get_last_three_test_results(self):
         # Get the last three test results for the person, ordered by most recent first.
         return TestResult.objects.filter(person=self).order_by("-test_date")[:3]
@@ -144,6 +150,29 @@ class Person(models.Model):
     @property
     def full_name(self):
         return f"{self.surname} {self.name}"
+
+
+class PersonMeasurement(models.Model):
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="measurements")
+    measurement_date = models.DateField()
+    height = models.FloatField()
+    weight = models.FloatField()
+    recorded_by = models.ForeignKey(
+        "auth.User", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name="recorded_measurements"
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-measurement_date"]
+        unique_together = ["person", "measurement_date"]
+
+    def __str__(self):
+        return f"{self.person.full_name} - {self.measurement_date} (H: {self.height}cm, W: {self.weight}kg)"
 
 
 class TestResult(models.Model):
@@ -212,6 +241,7 @@ class TestResult(models.Model):
     beep_test_level = models.IntegerField(null=True, blank=True)
     beep_test_laps = models.IntegerField(null=True, blank=True)
     beep_test_total_laps = models.IntegerField(null=True, blank=True)
+    beep_test_number = models.IntegerField(null=True, blank=True)
     max_hr = models.IntegerField(null=True, blank=True)
 
     def __str__(self):

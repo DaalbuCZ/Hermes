@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Schema, Body  # Add this import
 from typing import List, Optional, Dict
 from datetime import date, datetime, timedelta
-from .models import Person, TestResult, Event, Team
+from .models import Person, TestResult, Event, Team, PersonMeasurement
 from django.shortcuts import get_object_or_404
 from ninja.security import HttpBearer
 import jwt
@@ -124,6 +124,7 @@ class TestResultSchema(Schema):
     beep_test_level: int | None
     beep_test_laps: int | None
     beep_test_total_laps: int | None
+    beep_test_number: int | None
     max_hr: int | None
 
 
@@ -158,6 +159,24 @@ class AdjudicatorSchema(Schema):
     password: str
     first_name: str
     last_name: str
+
+
+class PersonMeasurementSchema(Schema):
+    id: int | None = None
+    person_id: int
+    measurement_date: date
+    height: float
+    weight: float
+    notes: str | None = None
+    recorded_by_id: int | None = None
+    created_at: datetime | None = None
+
+
+class PersonMeasurementCreateSchema(Schema):
+    measurement_date: date
+    height: float
+    weight: float
+    notes: str | None = None
 
 
 def is_superadmin(user):
@@ -1016,6 +1035,7 @@ class BeepTestBatchItem(Schema):
     person_id: int
     beep_test_level: int
     beep_test_laps: int
+    beep_test_number: Optional[int] = None
     max_hr: Optional[int] = None
 
 class BeepTestBatchResponse(Schema):
@@ -1058,6 +1078,7 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
                 beep_test_level=item.beep_test_level,
                 beep_test_laps=item.beep_test_laps,
                 beep_test_total_laps=beep_test_total_laps,
+                beep_test_number=item.beep_test_number,
                 max_hr=item.max_hr,
                 beep_test_score=beep_test_score,
                 test_name=event.name,
@@ -1189,3 +1210,124 @@ def get_or_create_test_result(person, event=None, **kwargs):
         for key, value in kwargs.items():
             setattr(test_result, key, value)
     return test_result
+
+
+# Measurement endpoints
+@api.get("/persons/{person_id}/measurements", response=List[PersonMeasurementSchema])
+def get_person_measurements(request, person_id: int):
+    """Get measurement history for a person"""
+    person = get_object_or_404(Person, id=person_id)
+    measurements = person.get_measurement_history()
+    
+    return [
+        {
+            "id": m.id,
+            "person_id": m.person.id,
+            "measurement_date": m.measurement_date,
+            "height": m.height,
+            "weight": m.weight,
+            "notes": m.notes,
+            "recorded_by_id": m.recorded_by.id if m.recorded_by else None,
+            "created_at": m.created_at,
+        }
+        for m in measurements
+    ]
+
+
+@api.get("/persons/{person_id}/measurements/latest", response=PersonMeasurementSchema)
+def get_latest_person_measurement(request, person_id: int):
+    """Get the latest measurement for a person"""
+    person = get_object_or_404(Person, id=person_id)
+    measurement = person.get_latest_measurement()
+    
+    if not measurement:
+        return api.create_response(
+            request,
+            {"detail": "No measurements found for this person"},
+            status=404
+        )
+    
+    return {
+        "id": measurement.id,
+        "person_id": measurement.person.id,
+        "measurement_date": measurement.measurement_date,
+        "height": measurement.height,
+        "weight": measurement.weight,
+        "notes": measurement.notes,
+        "recorded_by_id": measurement.recorded_by.id if measurement.recorded_by else None,
+        "created_at": measurement.created_at,
+    }
+
+
+@api.post("/persons/{person_id}/measurements", response=PersonMeasurementSchema)
+def add_person_measurement(request, person_id: int, measurement: PersonMeasurementCreateSchema):
+    """Add a new measurement for a person"""
+    person = get_object_or_404(Person, id=person_id)
+    
+    # Check if measurement for this date already exists
+    existing_measurement = PersonMeasurement.objects.filter(
+        person=person,
+        measurement_date=measurement.measurement_date
+    ).first()
+    
+    if existing_measurement:
+        return api.create_response(
+            request,
+            {"detail": "Measurement for this date already exists"},
+            status=400
+        )
+    
+    # Create new measurement
+    new_measurement = PersonMeasurement.objects.create(
+        person=person,
+        measurement_date=measurement.measurement_date,
+        height=measurement.height,
+        weight=measurement.weight,
+        notes=measurement.notes,
+        recorded_by=request.auth,
+    )
+    
+    return {
+        "id": new_measurement.id,
+        "person_id": new_measurement.person.id,
+        "measurement_date": new_measurement.measurement_date,
+        "height": new_measurement.height,
+        "weight": new_measurement.weight,
+        "notes": new_measurement.notes,
+        "recorded_by_id": new_measurement.recorded_by.id if new_measurement.recorded_by else None,
+        "created_at": new_measurement.created_at,
+    }
+
+
+@api.put("/persons/{person_id}/measurements/{measurement_id}", response=PersonMeasurementSchema)
+def update_person_measurement(request, person_id: int, measurement_id: int, measurement: PersonMeasurementCreateSchema):
+    """Update an existing measurement"""
+    person = get_object_or_404(Person, id=person_id)
+    existing_measurement = get_object_or_404(PersonMeasurement, id=measurement_id, person=person)
+    
+    # Update fields
+    existing_measurement.measurement_date = measurement.measurement_date
+    existing_measurement.height = measurement.height
+    existing_measurement.weight = measurement.weight
+    existing_measurement.notes = measurement.notes
+    existing_measurement.save()
+    
+    return {
+        "id": existing_measurement.id,
+        "person_id": existing_measurement.person.id,
+        "measurement_date": existing_measurement.measurement_date,
+        "height": existing_measurement.height,
+        "weight": existing_measurement.weight,
+        "notes": existing_measurement.notes,
+        "recorded_by_id": existing_measurement.recorded_by.id if existing_measurement.recorded_by else None,
+        "created_at": existing_measurement.created_at,
+    }
+
+
+@api.delete("/persons/{person_id}/measurements/{measurement_id}")
+def delete_person_measurement(request, person_id: int, measurement_id: int):
+    """Delete a measurement"""
+    person = get_object_or_404(Person, id=person_id)
+    measurement = get_object_or_404(PersonMeasurement, id=measurement_id, person=person)
+    measurement.delete()
+    return {"success": True}
