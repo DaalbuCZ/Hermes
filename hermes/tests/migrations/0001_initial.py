@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('weight', models.FloatField()),
                 ('height', models.FloatField()),
                 ('gender', models.CharField(choices=[('M', 'Muž'), ('F', 'Žena')], default='M', max_length=1)),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_persons', to=settings.AUTH_USER_MODEL)),
+                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_people', to=settings.AUTH_USER_MODEL)),
                 ('team', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='tests.team')),
             ],
         ),

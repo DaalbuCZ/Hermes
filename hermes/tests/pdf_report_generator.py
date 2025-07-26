@@ -72,7 +72,7 @@ def generate_test_results_pdf(test_results, output, adjudicator):
     if not isinstance(test_results, (list, tuple)):
         test_results = [test_results]
 
-    # Filter test results for persons in adjudicator's teams
+    # Filter test results for people in adjudicator's teams
     adjudicator_teams = adjudicator.teams.all()
     test_results = [tr for tr in test_results if tr.person.team in adjudicator_teams]
 
@@ -111,11 +111,11 @@ def generate_test_results_pdf(test_results, output, adjudicator):
         ],
     ]
 
-    # Get unique persons and active test from filtered test results
-    persons = {result.person for result in test_results}
+    # Get unique people and active test from filtered test results
+    people = {result.person for result in test_results}
     active_test = test_results[0].active_test if test_results else None
 
-    for person in persons:
+    for person in people:
         best_scores = get_best_test_scores(person, active_test, person.team)
         if best_scores:
             best_results_data.append(
@@ -280,7 +280,7 @@ def generate_test_results_pdf(test_results, output, adjudicator):
         img = Image(jpg_buffer, width=7 * inch, height=6 * inch)
         story.append(img)
 
-        # Add page break between persons (except for the last one)
+        # Add page break between people (except for the last one)
         if test_result != test_results[-1]:
             story.append(PageBreak())
 

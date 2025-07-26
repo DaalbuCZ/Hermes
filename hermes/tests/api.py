@@ -186,8 +186,8 @@ def get_token(request, auth_data: AuthSchema):
 
 
 # Existing endpoints
-@api.get("/persons", response=List[PersonSchema])
-def get_persons(request):
+@api.get("/people", response=List[PersonSchema])
+def get_people(request):
     # Return each person as a dict with age
     return [
         {
@@ -242,7 +242,7 @@ def get_team_results(request, team_id: int):
 
 
 # Person endpoints
-@api.post("/persons", response=PersonSchema)
+@api.post("/people", response=PersonSchema)
 def create_person(request, person: PersonSchema):
     person_data = person.dict(exclude={"id", "age", "team_id"})  # Exclude id, age, team_id from input
     # Set team_id from the authenticated user if available

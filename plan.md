@@ -13,17 +13,17 @@ This plan outlines the implementation of all requested features for the Hermes s
 - [x] Active Test → Event rename
   - [x] Database Changes
   - [x] API Changes
-  - [ ] Frontend Changes
+  - [x] Frontend Changes
   - [x] Database Migration
-- [ ] Input format hints
-  - [ ] Frontend Changes
-  - [ ] Component Updates
-- [ ] Y Test label improvements
-  - [ ] Frontend Changes
-  - [ ] UI Improvements
-- [ ] Minimum value handling
-  - [ ] Backend Changes
-  - [ ] Frontend Changes
+- [x] Input format hints
+  - [x] Frontend Changes
+  - [x] Component Updates
+- [x] Y Test label improvements
+  - [x] Frontend Changes
+  - [x] UI Improvements
+- [x] Minimum value handling
+  - [x] Backend Changes
+  - [x] Frontend Changes
 
 ## Phase 2 (Medium Priority)
 

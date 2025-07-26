@@ -36,7 +36,7 @@ class Person(models.Model):
         "auth.User",
         on_delete=models.SET_NULL,
         null=True,
-        related_name="created_persons",
+        related_name="created_people",
     )
     GENDER_CHOICES = [
         ("M", "Muž"),
