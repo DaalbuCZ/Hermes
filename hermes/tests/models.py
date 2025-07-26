@@ -25,7 +25,7 @@ class ActiveTest(models.Model):
         return f"{self.name} ({'Active' if self.is_active else 'Inactive'})"
 
 
-class Profile(models.Model):
+class Person(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     date_of_birth = models.DateField()
@@ -36,7 +36,7 @@ class Profile(models.Model):
         "auth.User",
         on_delete=models.SET_NULL,
         null=True,
-        related_name="created_profiles",
+        related_name="created_persons",
     )
     GENDER_CHOICES = [
         ("M", "Muž"),
@@ -135,11 +135,11 @@ class Profile(models.Model):
         return f"{self.surname} {self.name}"
 
     def get_latest_test_result(self):
-        return TestResult.objects.filter(profile=self).order_by("-test_date").first()
+        return TestResult.objects.filter(person=self).order_by("-test_date").first()
 
     def get_last_three_test_results(self):
-        # Get the last three test results for the profile, ordered by most recent first.
-        return TestResult.objects.filter(profile=self).order_by("-test_date")[:3]
+        # Get the last three test results for the person, ordered by most recent first.
+        return TestResult.objects.filter(person=self).order_by("-test_date")[:3]
 
     @property
     def full_name(self):
@@ -147,7 +147,7 @@ class Profile(models.Model):
 
 
 class TestResult(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE)
     active_test = models.ForeignKey(
         ActiveTest,
         on_delete=models.SET_NULL,
@@ -215,7 +215,7 @@ class TestResult(models.Model):
     max_hr = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.profile.surname} {self.profile.name} - {self._meta.model_name}"
+        return f"{self.person.surname} {self.person.name} - {self._meta.model_name}"
 
     def save(self, *args, **kwargs):
         # Calculate composite scores before saving

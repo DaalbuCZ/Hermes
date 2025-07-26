@@ -1,14 +1,14 @@
 from django import forms
-from .models import TestResult, Profile
+from .models import TestResult, Person
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
 
 
-class CustomProfileCreationForm(forms.ModelForm):
+class CustomPersonCreationForm(forms.ModelForm):
     date_of_birth = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
 
     class Meta:
-        model = Profile
+        model = Person
         fields = ["name", "surname", "date_of_birth", "height", "weight", "gender"]
 
 

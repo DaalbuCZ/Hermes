@@ -12,7 +12,7 @@ This plan outlines the implementation of all requested features for the Hermes s
   ```python
   class TestSession(models.Model):
       id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-      active_test = models.ForeignKey(ActiveTest, on_delete=models.CASCADE)
+      event = models.ForeignKey(Event, on_delete=models.CASCADE)
       created_by = models.ForeignKey(User, on_delete=models.CASCADE)
       created_at = models.DateTimeField(auto_now_add=True)
       expires_at = models.DateTimeField()
@@ -55,9 +55,54 @@ This plan outlines the implementation of all requested features for the Hermes s
 - Update all type definitions
 - Update all UI text from "Profile" to "Person"
 
-## 3. Time-Dependent Characteristics (Height + Weight)
+## 3. Active Test -> Event Rename
 
 ### 3.1 Database Changes
+
+- **Rename Model**: `ActiveTest` → `Event`
+- **Update Model Fields**:
+  ```python
+  class Event(models.Model):
+      id = models.AutoField(primary_key=True)
+      name = models.CharField(max_length=255)
+      is_active = models.BooleanField(default=False)
+      created_at = models.DateTimeField(auto_now_add=True)
+      team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
+      created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+  ```
+
+### 3.2 API Changes
+
+- Update all endpoint URLs from `/active-tests/` to `/events/`
+- Update schema names from `ActiveTestSchema` to `EventSchema`
+- Update all function names:
+  - `get_active_tests` → `get_events`
+  - `create_active_test` → `create_event`
+  - `update_active_test` → `update_event`
+  - `delete_active_test` → `delete_event`
+- Update all response types and documentation
+
+### 3.3 Frontend Changes
+
+- Update all API calls from `activeTests` to `events`
+- Update all component names:
+  - `ActiveTests.tsx` → `Events.tsx`
+  - `useActiveTest.ts` → `useEvent.ts`
+- Update all variable names:
+  - `activeTest` → `event`
+  - `isLoadingActiveTest` → `isLoadingEvent`
+- Update all UI text from "Active Test" to "Event"
+- Update all routing paths from `/management/active-tests` to `/management/events`
+
+### 3.4 Database Migration
+
+- Create migration to rename table from `tests_activetest` to `tests_event`
+- Update all foreign key references in `TestResult` model
+- Update admin registration
+
+## 4. Time-Dependent Characteristics (Height + Weight)
+
+### 4.1 Database Changes
 
 - **New Model**: `PersonMeasurement`
   ```python
@@ -70,57 +115,57 @@ This plan outlines the implementation of all requested features for the Hermes s
       notes = models.TextField(blank=True)
   ```
 
-### 3.2 API Endpoints
+### 4.2 API Endpoints
 
 - `GET /persons/{person_id}/measurements/` - Get measurement history
 - `POST /persons/{person_id}/measurements/` - Add new measurement
 - `GET /persons/{person_id}/measurements/latest/` - Get latest measurement
 
-### 3.3 Frontend Changes
+### 4.3 Frontend Changes
 
 - New component: `PersonMeasurementHistory.tsx`
 - Measurement tracking interface
 - Charts showing height/weight over time
 - Integration with test forms to use latest measurements
 
-## 4. Beep Test Number Assignment
+## 5. Beep Test Number Assignment
 
-### 4.1 Database Changes
+### 5.1 Database Changes
 
 - Add field to `TestResult` model:
   ```python
   beep_test_number = models.IntegerField(null=True, blank=True)
   ```
 
-### 4.2 API Changes
+### 5.2 API Changes
 
 - Update beep test endpoints to include number assignment
-- Add endpoint: `GET /beep-test/numbers/{active_test_id}/` - Get assigned numbers
+- Add endpoint: `GET /beep-test/numbers/{event_id}/` - Get assigned numbers
 
-### 4.3 Frontend Changes
+### 5.3 Frontend Changes
 
 - Update `BeepTestBatch.tsx` to include number assignment
 - Add number input field to batch interface
 - Add sorting by number in results display
 - Add number validation (unique per test session)
 
-## 5. Minimum Value Handling (1 point for values below minimum)
+## 6. Minimum Value Handling (1 point for values below minimum)
 
-### 5.1 Backend Changes
+### 6.1 Backend Changes
 
 - Update score calculation functions in `score_tables.py`
 - Modify all test score calculations to return minimum 1 point
 - Update validation logic
 
-### 5.2 Frontend Changes
+### 6.2 Frontend Changes
 
 - Update score display to show minimum 1 point
 - Add visual indicators for minimum scores
 - Update score calculation preview
 
-## 6. Input Format Hints
+## 7. Input Format Hints
 
-### 6.1 Frontend Changes
+### 7.1 Frontend Changes
 
 - Add `placeholder` attributes to all numeric inputs
 - Add `title` attributes with format hints
@@ -130,15 +175,15 @@ This plan outlines the implementation of all requested features for the Hermes s
   - "Enter distance in meters (e.g., 5.2)"
   - "Enter level number (e.g., 5)"
 
-### 6.2 Component Updates
+### 7.2 Component Updates
 
 - Update all test form components
 - Add format validation with helpful error messages
 - Add input masks where appropriate
 
-## 7. Y Test Improvements
+## 8. Y Test Improvements
 
-### 7.1 Frontend Changes
+### 8.1 Frontend Changes
 
 - **Update Y Test Labels**:
   - `y_test_ll_front` → "Left Leg - Front (Left Leg Standing)"
@@ -154,16 +199,16 @@ This plan outlines the implementation of all requested features for the Hermes s
   - `y_test_ra_front` → "Right Arm - Front (Right Arm Propped)"
   - `y_test_ra_back` → "Right Arm - Back (Right Arm Propped)"
 
-### 7.2 UI Improvements
+### 8.2 UI Improvements
 
 - Add visual diagram showing test positions
 - Add tooltips explaining each measurement
 - Group measurements by standing leg
 - Add validation for logical consistency
 
-## 8. Import Database of Participants
+## 9. Import Database of Participants
 
-### 8.1 Backend Changes
+### 9.1 Backend Changes
 
 - **New API Endpoint**: `POST /persons/import/`
 - Support for CSV/Excel file upload
@@ -171,7 +216,7 @@ This plan outlines the implementation of all requested features for the Hermes s
 - Validation and error reporting
 - Batch processing with progress tracking
 
-### 8.2 Frontend Changes
+### 9.2 Frontend Changes
 
 - New component: `PersonImport.tsx`
 - File upload interface
@@ -180,7 +225,7 @@ This plan outlines the implementation of all requested features for the Hermes s
 - Error handling and reporting
 - Progress tracking
 
-### 8.3 Import Features
+### 9.3 Import Features
 
 - Support for required fields: name, surname
 - Optional fields: date_of_birth, gender, height, weight
@@ -188,9 +233,9 @@ This plan outlines the implementation of all requested features for the Hermes s
 - Duplicate detection and handling
 - Validation rules enforcement
 
-## 9. Gender and Date of Birth Collection
+## 10. Gender and Date of Birth Collection
 
-### 9.1 Database Changes
+### 10.1 Database Changes
 
 - Add fields to track missing data:
   ```python
@@ -200,14 +245,14 @@ This plan outlines the implementation of all requested features for the Hermes s
       date_of_birth_required = models.BooleanField(default=False)
   ```
 
-### 9.2 Frontend Changes
+### 10.2 Frontend Changes
 
 - **New Component**: `PersonDataCollection.tsx`
 - Modal/dialog for collecting missing data
 - Integration with test forms
 - Validation and error handling
 
-### 9.3 Flow Implementation
+### 10.3 Flow Implementation
 
 - Check for missing data before test submission
 - Show data collection form if needed
@@ -219,9 +264,10 @@ This plan outlines the implementation of all requested features for the Hermes s
 ### Phase 1 (High Priority)
 
 1. Profile → Person rename
-2. Input format hints
-3. Y Test label improvements
-4. Minimum value handling
+2. Active Test → Event rename
+3. Input format hints
+4. Y Test label improvements
+5. Minimum value handling
 
 ### Phase 2 (Medium Priority)
 
@@ -276,7 +322,7 @@ src/
 │   └── PersonDataCollection.tsx
 ├── pages/
 │   ├── management/
-│   │   └── TestSessions.tsx
+│   │   └── Events.tsx
 │   └── tests/
 │       └── SessionTest.tsx
 └── utils/
@@ -285,17 +331,17 @@ src/
 
 ### Modified Files
 
-- All test components (rename Profile → Person)
+- All test components (rename Profile → Person, ActiveTest → Event)
 - All API calls and types
 - All routing configurations
 - All form validation schemas
 
 ## Estimated Timeline
 
-- **Phase 1**: 2-3 weeks
+- **Phase 1**: 3-4 weeks
 - **Phase 2**: 3-4 weeks
 - **Phase 3**: 2-3 weeks
-- **Total**: 7-10 weeks
+- **Total**: 8-11 weeks
 
 ## Risk Mitigation
 

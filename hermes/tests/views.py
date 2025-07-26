@@ -7,7 +7,7 @@ from django.contrib.auth.models import User, Group
 from .radarplot_generator import generate_radar_plot_from_scores
 from .pdf_report_generator import generate_test_results_pdf
 from reportlab.platypus import PageBreak
-from .models import TestResult, Profile
+from .models import TestResult, Person
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .score_tables import (
     calculate_score,
@@ -15,7 +15,7 @@ from .score_tables import (
     calculate_y_test_index,
 )
 from .forms import (
-    CustomProfileCreationForm,
+    CustomPersonCreationForm,
     LadderForm,
     BraceForm,
     HexagonForm,
@@ -50,14 +50,14 @@ def is_adjudicator(user):
 @login_required
 @user_passes_test(is_adjudicator)
 def test_results(request):
-    profiles = Profile.objects.all().order_by("surname")
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
+    persons = Person.objects.all().order_by("surname")
+    persons = Person.objects.filter(team__in=request.user.teams.all())
 
-    # Create a list of dictionaries containing profile information and test results
+    # Create a list of dictionaries containing person information and test results
     results = []
-    for profile in profiles:
-        test_result = TestResult.objects.filter(profile=profile).first()
-        results.append({"profile": profile, "test_result": test_result})
+    for person in persons:
+        test_result = TestResult.objects.filter(person=person).first()
+        results.append({"person": person, "test_result": test_result})
 
     return render(request, "results.html", {"results": results})
 
@@ -68,12 +68,12 @@ def index(request):
 
 @login_required
 @user_passes_test(is_adjudicator)
-def add_profile(request):
+def add_person(request):
     if request.method == "POST":
-        form = CustomProfileCreationForm(request.POST)
+        form = CustomPersonCreationForm(request.POST)
         if form.is_valid():
-            profile = form.save(commit=False)
-            profile.created_by = request.user  # Set the creator
+            person = form.save(commit=False)
+            person.created_by = request.user  # Set the creator
 
             # If user is part of a team with active test, assign the team
             user_teams = request.user.teams.all()
@@ -82,53 +82,53 @@ def add_profile(request):
             ).first()
 
             if active_test:
-                profile.team = active_test.team
+                person.team = active_test.team
 
-            profile.save()
+            person.save()
 
-            # Check if TestResult already exists for this profile and active test
+            # Check if TestResult already exists for this person and active test
             test_result, created = TestResult.objects.get_or_create(
-                profile=profile,
+                person=person,
                 active_test=active_test,
                 defaults={
-                    "team": profile.team,
+                    "team": person.team,
                     "test_name": active_test.name if active_test else None,
                     "test_date": active_test.created_at if active_test else None,
                 },
             )
 
-            return redirect("profile_list")
+            return redirect("person_list")
     else:
-        form = CustomProfileCreationForm()
+        form = CustomPersonCreationForm()
 
     return render(request, "add_profile.html", {"form": form})
 
 
 @login_required
 @user_passes_test(is_adjudicator)
-def edit_profile(request, profile_id):
-    profile = get_object_or_404(Profile, id=profile_id)
+def edit_person(request, person_id):
+    person = get_object_or_404(Person, id=person_id)
     if request.method == "POST":
-        form = CustomProfileCreationForm(request.POST, instance=profile)
+        form = CustomPersonCreationForm(request.POST, instance=person)
         if form.is_valid():
             form.save()
-            return redirect("profile_list")
+            return redirect("person_list")
     else:
-        form = CustomProfileCreationForm(instance=profile)
+        form = CustomPersonCreationForm(instance=person)
     return render(request, "edit_profile.html", {"form": form})
 
 
 @login_required
 @user_passes_test(is_adjudicator)
-def profile_list(request):
-    profiles = Profile.objects.all().order_by("surname")
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
-    return render(request, "profile_list.html", {"profiles": profiles})
+def person_list(request):
+    persons = Person.objects.all().order_by("surname")
+    persons = Person.objects.filter(team__in=request.user.teams.all())
+    return render(request, "profile_list.html", {"profiles": persons})
 
 
-def get_or_create_test_result(profile, test_type, **kwargs):
+def get_or_create_test_result(person, test_type, **kwargs):
     test_result, created = TestResult.objects.get_or_create(
-        profile=profile,
+        person=person,
         defaults=kwargs,
     )
     if not created:
@@ -143,19 +143,19 @@ def ladder_test_view(request):
     if request.method == "POST":
         form = LadderForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             ladder_time_1 = request.POST.get("ladder_time_1")
             ladder_time_2 = request.POST.get("ladder_time_2")
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "ladder",
                 ladder_time_1=float(ladder_time_1) if ladder_time_1 else None,
                 ladder_time_2=float(ladder_time_2) if ladder_time_2 else None,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             score = calculate_score(
                 age,
                 gender,
@@ -170,12 +170,12 @@ def ladder_test_view(request):
             print(form.errors)
     else:
         form = LadderForm()
-        profiles = Profile.objects.filter(team__in=request.user.teams.all())
+        persons = Person.objects.filter(team__in=request.user.teams.all())
         test_result = None
-        profile_id = request.GET.get("profile_id")
-        if profile_id:
-            profile = get_object_or_404(Profile, id=profile_id)
-            test_result = TestResult.objects.filter(profile=profile).first()
+        person_id = request.GET.get("person_id")
+        if person_id:
+            person = get_object_or_404(Person, id=person_id)
+            test_result = TestResult.objects.filter(person=person).first()
     teams = Team.objects.all()
     active_test = ActiveTest.objects.filter(is_active=True).first()
     return render(
@@ -183,7 +183,7 @@ def ladder_test_view(request):
         "tests/ladder_test.html",
         {
             "form": form,
-            "profiles": profiles,
+            "profiles": persons,
             "test_result": test_result,
             "teams": teams,
             "active_test": active_test,
@@ -197,19 +197,19 @@ def brace_test_view(request):
     if request.method == "POST":
         form = BraceForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             brace_time_1 = request.POST.get("brace_time_1")
             brace_time_2 = request.POST.get("brace_time_2")
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "brace",
                 brace_time_1=float(brace_time_1) if brace_time_1 else None,
                 brace_time_2=float(brace_time_2) if brace_time_2 else None,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             score = calculate_score(
                 age, gender, "brace", test_result.brace_time_1, test_result.brace_time_2
             )
@@ -220,11 +220,11 @@ def brace_test_view(request):
             print(form.errors)
     else:
         form = BraceForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
+    persons = Person.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/brace_test.html",
-        {"form": form, "profiles": profiles},
+        {"form": form, "profiles": persons},
     )
 
 
@@ -234,19 +234,19 @@ def hexagon_test_view(request):
     if request.method == "POST":
         form = HexagonForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             hexagon_time_cw = request.POST.get("hexagon_time_cw")
             hexagon_time_ccw = request.POST.get("hexagon_time_ccw")
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "hexagon",
                 hexagon_time_cw=float(hexagon_time_cw) if hexagon_time_cw else None,
                 hexagon_time_ccw=float(hexagon_time_ccw) if hexagon_time_ccw else None,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             score = calculate_score(
                 age,
                 gender,
@@ -261,11 +261,11 @@ def hexagon_test_view(request):
             print(form.errors)
     else:
         form = HexagonForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
+    persons = Person.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/hexagon_test.html",
-        {"form": form, "profiles": profiles},
+        {"form": form, "profiles": persons},
     )
 
 
@@ -275,13 +275,13 @@ def medicimbal_test_view(request):
     if request.method == "POST":
         form = MedicimbalForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             medicimbal_throw_1 = request.POST.get("medicimbal_throw_1")
             medicimbal_throw_2 = request.POST.get("medicimbal_throw_2")
             medicimbal_throw_3 = request.POST.get("medicimbal_throw_3")
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "medicimbal",
                 medicimbal_throw_1=(
                     float(medicimbal_throw_1) if medicimbal_throw_1 else None
@@ -294,8 +294,8 @@ def medicimbal_test_view(request):
                 ),
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             score = calculate_score(
                 age,
                 gender,
@@ -311,11 +311,11 @@ def medicimbal_test_view(request):
             print(form.errors)
     else:
         form = MedicimbalForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
+    persons = Person.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/medicimbal_test.html",
-        {"form": form, "profiles": profiles},
+        {"form": form, "profiles": persons},
     )
 
 
@@ -325,19 +325,19 @@ def jet_test_view(request):
     if request.method == "POST":
         form = JetForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             jet_laps = int(request.POST.get("jet_laps"))
             jet_sides = int(request.POST.get("jet_sides"))
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "jet",
                 jet_laps=jet_laps,
                 jet_sides=jet_sides,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             jet_distance = jet_laps * 40 + jet_sides * 10
             score = calculate_score(age, gender, "jet", jet_distance)
             test_result.jet_score = score
@@ -348,8 +348,8 @@ def jet_test_view(request):
             print(form.errors)
     else:
         form = JetForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
-    return render(request, "tests/jet_test.html", {"form": form, "profiles": profiles})
+    persons = Person.objects.filter(team__in=request.user.teams.all())
+    return render(request, "tests/jet_test.html", {"form": form, "profiles": persons})
 
 
 @login_required
@@ -358,10 +358,10 @@ def y_test_view(request):
     if request.method == "POST":
         form = YTestForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "y_test",
                 y_test_ll_front=float(request.POST.get("y_test_ll_front")),
                 y_test_ll_left=float(request.POST.get("y_test_ll_left")),
@@ -377,9 +377,9 @@ def y_test_view(request):
                 y_test_ra_back=float(request.POST.get("y_test_ra_back")),
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
-            height = test_result.profile.height
+            age = test_result.person.age
+            gender = test_result.person.gender
+            height = test_result.person.height
             score = calculate_score(
                 age,
                 gender,
@@ -420,8 +420,8 @@ def y_test_view(request):
             print(form.errors)
     else:
         form = YTestForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
-    return render(request, "tests/y_test.html", {"form": form, "profiles": profiles})
+    persons = Person.objects.filter(team__in=request.user.teams.all())
+    return render(request, "tests/y_test.html", {"form": form, "profiles": persons})
 
 
 @login_required
@@ -430,21 +430,21 @@ def beep_test_view(request):
     if request.method == "POST":
         form = BeepTestForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             beep_test_laps = int(request.POST.get("beep_test_laps"))
             beep_test_level = int(request.POST.get("beep_test_level"))
             max_hr = int(request.POST.get("max_hr"))
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "beep_test",
                 beep_test_laps=beep_test_laps,
                 beep_test_level=beep_test_level,
                 max_hr=max_hr,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             total_laps = calculate_beep_test_total_laps(beep_test_level, beep_test_laps)
             score = calculate_score(age, gender, "beep_test", total_laps)
             test_result.beep_test_score = score
@@ -457,8 +457,8 @@ def beep_test_view(request):
         form = BeepTestForm()
     # Filter profiles by the adjudicator's team
     adjudicator_teams = request.user.teams.all()
-    profiles = Profile.objects.filter(team__in=adjudicator_teams)
-    return render(request, "tests/beep_test.html", {"form": form, "profiles": profiles})
+    persons = Person.objects.filter(team__in=adjudicator_teams)
+    return render(request, "tests/beep_test.html", {"form": form, "profiles": persons})
 
 
 @login_required
@@ -467,17 +467,17 @@ def triple_jump_test_view(request):
     if request.method == "POST":
         form = TripleJumpForm(request.POST)
         if form.is_valid():
-            profile_id = request.POST.get("profile_id")
-            profile = get_object_or_404(Profile, id=profile_id)
+            person_id = request.POST.get("person_id")
+            person = get_object_or_404(Person, id=person_id)
             triple_jump_distance = float(request.POST.get("triple_jump_distance"))
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 "triple_jump",
                 triple_jump_distance=triple_jump_distance,
                 active_test=ActiveTest.objects.filter(is_active=True).first(),
             )
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             score = calculate_score(age, gender, "triple_jump", triple_jump_distance)
             test_result.triple_jump_score = score
             test_result.save()
@@ -486,11 +486,11 @@ def triple_jump_test_view(request):
             print(form.errors)  # Debug print form errors
     else:
         form = TripleJumpForm()
-    profiles = Profile.objects.filter(team__in=request.user.teams.all())
+    persons = Person.objects.filter(team__in=request.user.teams.all())
     return render(
         request,
         "tests/triple_jump_test.html",
-        {"form": form, "profiles": profiles},
+        {"form": form, "profiles": persons},
     )
 
 
@@ -541,15 +541,15 @@ def assign_team_and_test_details(team, active_test):
     # Update all profiles created by these adjudicators
     for adjudicator in adjudicators:
         # Assign team to adjudicator's profiles
-        Profile.objects.filter(created_by=adjudicator).update(team=team)
+        Person.objects.filter(created_by=adjudicator).update(team=team)
 
         # Get profiles created by this adjudicator
-        profiles = Profile.objects.filter(created_by=adjudicator)
+        persons = Person.objects.filter(created_by=adjudicator)
 
         # Create new test results for each profile if not already exists
-        for profile in profiles:
+        for person in persons:
             TestResult.objects.get_or_create(
-                profile=profile,
+                person=person,
                 active_test=active_test,
                 defaults={
                     "team": team,
@@ -635,8 +635,8 @@ def recalculate_scores_view(request):
     if active_test:
         # Get test results only for the active test and user's teams
         test_results = TestResult.objects.filter(
-            profile__team__in=user_teams, active_test=active_test
-        ).order_by("profile__surname")
+            person__team__in=user_teams, active_test=active_test
+        ).order_by("person__surname")
     else:
         test_results = TestResult.objects.none()
 
@@ -645,12 +645,12 @@ def recalculate_scores_view(request):
 
 @login_required
 @user_passes_test(is_adjudicator)
-def download_radar_plot(request, profile_id):
-    test_result = get_object_or_404(TestResult, profile_id=profile_id)
+def download_radar_plot(request, person_id):
+    test_result = get_object_or_404(TestResult, person_id=person_id)
 
     # Get the last 3 test results for this profile
     historical_results = TestResult.objects.filter(
-        profile_id=profile_id,
+        person_id=person_id,
         active_test=test_result.active_test,
         team=test_result.team,
     ).order_by("-test_date")[:3]
@@ -674,7 +674,7 @@ def download_radar_plot(request, profile_id):
     # Create response
     response = HttpResponse(content_type="image/png")
     response["Content-Disposition"] = (
-        f'attachment; filename="radar_plot_{profile_id}.png"'
+        f'attachment; filename="radar_plot_{person_id}.png"'
     )
     response.write(plot_buffer.getvalue())
 
@@ -683,13 +683,13 @@ def download_radar_plot(request, profile_id):
 
 @login_required
 @user_passes_test(is_adjudicator)
-def get_profile_data(request):
-    profile_id = request.GET.get("profile_id")
-    profile = get_object_or_404(Profile, id=profile_id)
+def get_person_data(request):
+    person_id = request.GET.get("person_id")
+    person = get_object_or_404(Person, id=person_id)
     data = {
-        "age": profile.age,
-        "height": profile.height,
-        "weight": profile.weight,
+        "age": person.age,
+        "height": person.height,
+        "weight": person.weight,
         # Include other fields as needed
     }
     return JsonResponse(data)
@@ -697,8 +697,8 @@ def get_profile_data(request):
 
 @login_required
 @user_passes_test(is_adjudicator)
-def download_pdf_report(request, profile_id):
-    test_result = get_object_or_404(TestResult, profile_id=profile_id)
+def download_pdf_report(request, person_id):
+    test_result = get_object_or_404(TestResult, person_id=person_id)
 
     # Create a BytesIO buffer to receive PDF data
     buffer = BytesIO()
@@ -710,7 +710,7 @@ def download_pdf_report(request, profile_id):
     buffer.seek(0)
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = (
-        f'attachment; filename="test_results_{profile_id}.pdf"'
+        f'attachment; filename="test_results_{person_id}.pdf"'
     )
     response.write(buffer.getvalue())
 
@@ -721,7 +721,7 @@ def download_pdf_report(request, profile_id):
 @user_passes_test(is_adjudicator)
 def download_all_pdf_reports(request):
     # Get all test results ordered by surname
-    test_results = TestResult.objects.all().order_by("profile__surname")
+    test_results = TestResult.objects.all().order_by("person__surname")
 
     # Create a BytesIO buffer to receive PDF data
     buffer = BytesIO()

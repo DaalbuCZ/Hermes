@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Schema, Body  # Add this import
 from typing import List, Optional, Dict
 from datetime import date, datetime, timedelta
-from .models import Profile, TestResult, ActiveTest, Team
+from .models import Person, TestResult, ActiveTest, Team
 from django.shortcuts import get_object_or_404
 from ninja.security import HttpBearer
 import jwt
@@ -45,7 +45,7 @@ class AuthSchema(Schema):
 
 
 # Other Schemas
-class ProfileSchema(Schema):
+class PersonSchema(Schema):
     id: int | None = None  # Make id optional for creation
     name: str
     surname: str
@@ -59,7 +59,7 @@ class ProfileSchema(Schema):
 
 class TestResultSchema(Schema):
     id: int
-    profile_id: int
+    person_id: int
     test_date: date
     test_name: str
     team: str | None
@@ -186,9 +186,9 @@ def get_token(request, auth_data: AuthSchema):
 
 
 # Existing endpoints
-@api.get("/profiles", response=List[ProfileSchema])
-def get_profiles(request):
-    # Return each profile as a dict with age
+@api.get("/persons", response=List[PersonSchema])
+def get_persons(request):
+    # Return each person as a dict with age
     return [
         {
             "id": p.id,
@@ -201,13 +201,13 @@ def get_profiles(request):
             "team_id": p.team.id if p.team else None,
             "age": p.age,
         }
-        for p in Profile.objects.all()
+        for p in Person.objects.all()
     ]
 
 
-@api.get("/profile/{profile_id}", response=ProfileSchema)
-def get_profile(request, profile_id: int):
-    return get_object_or_404(Profile, id=profile_id)
+@api.get("/person/{person_id}", response=PersonSchema)
+def get_person(request, person_id: int):
+    return get_object_or_404(Person, id=person_id)
 
 
 @api.get("/results", response=List[TestResultSchema])
@@ -218,15 +218,15 @@ def get_test_results(request):
     for r in results:
         d = r.__dict__.copy()
         d["team"] = r.team.name if hasattr(r, "team") and r.team else None
-        d["profile_id"] = r.profile.id if hasattr(r, "profile") and r.profile else None
+        d["person_id"] = r.person.id if hasattr(r, "person") and r.person else None
         d["test_date"] = r.test_date
         serialized.append(d)
     return serialized
 
 
-@api.get("/results/{profile_id}", response=List[TestResultSchema])
-def get_profile_results(request, profile_id: int):
-    return TestResult.objects.filter(profile_id=profile_id)
+@api.get("/results/{person_id}", response=List[TestResultSchema])
+def get_person_results(request, person_id: int):
+    return TestResult.objects.filter(person_id=person_id)
 
 
 @api.get("/teams", response=List[TeamSchema])
@@ -238,50 +238,50 @@ def get_teams(request):
 
 @api.get("/team/{team_id}/results", response=List[TestResultSchema])
 def get_team_results(request, team_id: int):
-    return TestResult.objects.filter(profile__team_id=team_id)
+    return TestResult.objects.filter(person__team_id=team_id)
 
 
-# Profile endpoints
-@api.post("/profiles", response=ProfileSchema)
-def create_profile(request, profile: ProfileSchema):
-    profile_data = profile.dict(exclude={"id", "age", "team_id"})  # Exclude id, age, team_id from input
+# Person endpoints
+@api.post("/persons", response=PersonSchema)
+def create_person(request, person: PersonSchema):
+    person_data = person.dict(exclude={"id", "age", "team_id"})  # Exclude id, age, team_id from input
     # Set team_id from the authenticated user if available
     team_id = None
     if hasattr(request.auth, "teams") and request.auth.teams.exists():
         team_id = request.auth.teams.first().id
-    profile_data["team_id"] = team_id
-    new_profile = Profile.objects.create(**profile_data)
-    # Find the active test for the new profile's team
+    person_data["team_id"] = team_id
+    new_person = Person.objects.create(**person_data)
+    # Find the active test for the new person's team
     active_test = None
-    if new_profile.team:
-        active_test = ActiveTest.objects.filter(is_active=True, team=new_profile.team).first()
-    # Create a blank TestResult for the new profile, with the active test if available
-    TestResult.objects.create(profile=new_profile, team=new_profile.team, active_test=active_test)
-    return new_profile
+    if new_person.team:
+        active_test = ActiveTest.objects.filter(is_active=True, team=new_person.team).first()
+    # Create a blank TestResult for the new person, with the active test if available
+    TestResult.objects.create(person=new_person, team=new_person.team, active_test=active_test)
+    return new_person
 
 
-@api.put("/profile/{profile_id}", response=ProfileSchema)
-def update_profile(request, profile_id: int, profile: ProfileSchema):
-    profile_obj = get_object_or_404(Profile, id=profile_id)
-    for key, value in profile.dict(exclude_unset=True).items():
-        setattr(profile_obj, key, value)
-    profile_obj.save()
-    return profile_obj
+@api.put("/person/{person_id}", response=PersonSchema)
+def update_person(request, person_id: int, person: PersonSchema):
+    person_obj = get_object_or_404(Person, id=person_id)
+    for key, value in person.dict(exclude_unset=True).items():
+        setattr(person_obj, key, value)
+    person_obj.save()
+    return person_obj
 
 
-@api.delete("/profile/{profile_id}")
-def delete_profile(request, profile_id: int):
-    profile = get_object_or_404(Profile, id=profile_id)
-    profile.delete()
+@api.delete("/person/{person_id}")
+def delete_person(request, person_id: int):
+    person = get_object_or_404(Person, id=person_id)
+    person.delete()
     return {"success": True}
 
 
 # Test result endpoints
 @api.post("/results", response=TestResultSchema)
 def create_test_result(request, test_result: TestResultSchema):
-    profile = get_object_or_404(Profile, id=test_result.profile_id)
+    person = get_object_or_404(Person, id=test_result.person_id)
     return TestResult.objects.create(
-        profile=profile, **test_result.dict(exclude={"profile_id"})
+        person=person, **test_result.dict(exclude={"person_id"})
     )
 
 
@@ -289,7 +289,7 @@ def create_test_result(request, test_result: TestResultSchema):
 def update_test_result(request, result_id: int, test_result: TestResultSchema):
     result = get_object_or_404(TestResult, id=result_id)
     for key, value in test_result.dict(
-        exclude_unset=True, exclude={"profile_id"}
+        exclude_unset=True, exclude={"person_id"}
     ).items():
         setattr(result, key, value)
     result.save()
@@ -332,26 +332,26 @@ def delete_team(request, team_id: int):
 
 
 # Additional test result queries
-@api.get("/results/latest/{profile_id}", response=TestResultSchema)
-def get_latest_profile_result(request, profile_id: int):
+@api.get("/results/latest/{person_id}", response=TestResultSchema)
+def get_latest_person_result(request, person_id: int):
     return (
-        TestResult.objects.filter(profile_id=profile_id).order_by("-test_date").first()
+        TestResult.objects.filter(person_id=person_id).order_by("-test_date").first()
     )
 
 
 @api.get("/results/team/{team_id}/latest", response=List[TestResultSchema])
 def get_team_latest_results(request, team_id: int):
     return (
-        TestResult.objects.filter(profile__team_id=team_id)
-        .order_by("profile_id", "-test_date")
-        .distinct("profile_id")
+        TestResult.objects.filter(person__team_id=team_id)
+        .order_by("person_id", "-test_date")
+        .distinct("person_id")
     )
 
 
-@api.get("/results/aggregate/{profile_id}")
-def get_profile_aggregate_scores(request, profile_id: int):
+@api.get("/results/aggregate/{person_id}")
+def get_person_aggregate_scores(request, person_id: int):
     latest_result = (
-        TestResult.objects.filter(profile_id=profile_id).order_by("-test_date").first()
+        TestResult.objects.filter(person_id=person_id).order_by("-test_date").first()
     )
     if not latest_result:
         return {"detail": "No test results found"}
@@ -499,19 +499,19 @@ def get_results_by_test_type(request, test_type: str):
 def get_team_results_by_test_type(request, test_type: str, team_id: int):
     """Get team results filtered by test type"""
     field_name = f"{test_type}_score"
-    return TestResult.objects.filter(profile__team_id=team_id).exclude(
+    return TestResult.objects.filter(person__team_id=team_id).exclude(
         **{field_name: None}
     )
 
 
 @api.get(
-    "/results/test-type/{test_type}/profile/{profile_id}",
+    "/results/test-type/{test_type}/person/{person_id}",
     response=List[TestResultSchema],
 )
-def get_profile_results_by_test_type(request, test_type: str, profile_id: int):
+def get_person_results_by_test_type(request, test_type: str, person_id: int):
     """Get profile results filtered by test type"""
     field_name = f"{test_type}_score"
-    return TestResult.objects.filter(profile_id=profile_id).exclude(
+    return TestResult.objects.filter(person_id=person_id).exclude(
         **{field_name: None}
     )
 
@@ -536,7 +536,7 @@ def get_team_statistics(request, team_id: int):
     stats = {}
     for test_type in test_types:
         field_name = f"{test_type}_score"
-        results = TestResult.objects.filter(profile__team_id=team_id).exclude(
+        results = TestResult.objects.filter(person__team_id=team_id).exclude(
             **{field_name: None}
         )
         stats[test_type] = {
@@ -550,7 +550,7 @@ def get_team_statistics(request, team_id: int):
     composite_scores = ["strength", "speed", "endurance", "agility"]
     for score_type in composite_scores:
         field_name = f"{score_type}_score"
-        results = TestResult.objects.filter(profile__team_id=team_id).exclude(
+        results = TestResult.objects.filter(person__team_id=team_id).exclude(
             **{field_name: None}
         )
         stats[f"{score_type}_composite"] = {
@@ -562,8 +562,8 @@ def get_team_statistics(request, team_id: int):
     return stats
 
 
-@api.get("/statistics/profile/{profile_id}")
-def get_profile_progress(request, profile_id: int):
+@api.get("/statistics/person/{person_id}")
+def get_person_progress(request, person_id: int):
     """Get progress statistics for a profile across all test types"""
     from django.db.models import F
 
@@ -582,7 +582,7 @@ def get_profile_progress(request, profile_id: int):
     for test_type in test_types:
         field_name = f"{test_type}_score"
         results = (
-            TestResult.objects.filter(profile_id=profile_id)
+            TestResult.objects.filter(person_id=person_id)
             .exclude(**{field_name: None})
             .order_by("test_date")
             .values("test_date", field_name)
@@ -606,8 +606,8 @@ def get_profile_progress(request, profile_id: int):
     return progress
 
 # Add these new test-specific endpoints after the existing endpoints
-@api.post("/ladder-test/{profile_id}", response=TestResultSchema)
-def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/ladder-test/{person_id}", response=TestResultSchema)
+def save_ladder_test(request, person_id: int, data: dict = Body(...)):
     # print(f"Received ladder test data: {data}")
     # print(f"Data types - time1: {type(data.get('ladder_time_1'))}, time2: {type(data.get('ladder_time_2'))}")
     try:
@@ -620,9 +620,9 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
                 request, {"detail": "Invalid times - each time must be a number or null"}, status=422
             )
 
-        profile = get_object_or_404(Profile, id=profile_id)
+        person = get_object_or_404(Person, id=person_id)
         # print(f"Profile found - ID: {profile.id}, Age: {profile.age}, Gender: {profile.gender}, Team: {profile.team}")
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         # print(f"Active test found: {active_test is not None}")
 
         if not active_test:
@@ -631,8 +631,8 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
             )
 
         score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "ladder",
             data.get("ladder_time_1"),
             data.get("ladder_time_2")
@@ -647,7 +647,7 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
             )
 
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             ladder_time_1=data.get("ladder_time_1"),
             ladder_time_2=data.get("ladder_time_2"),
@@ -661,7 +661,7 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -672,10 +672,10 @@ def save_ladder_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/brace-test/{profile_id}", response=TestResultSchema)
-def save_brace_test(request, profile_id: int, data: dict = Body(...)):
-    profile = get_object_or_404(Profile, id=profile_id)
-    active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+@api.post("/brace-test/{person_id}", response=TestResultSchema)
+def save_brace_test(request, person_id: int, data: dict = Body(...)):
+    person = get_object_or_404(Person, id=person_id)
+    active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
     
     if not active_test:
         return api.create_response(
@@ -692,13 +692,13 @@ def save_brace_test(request, profile_id: int, data: dict = Body(...)):
         )
 
     test_result = get_or_create_test_result(
-        profile,
+        person,
         active_test,
         brace_time_1=data.get("brace_time_1"),
         brace_time_2=data.get("brace_time_2"),
         brace_score=calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "brace",
             data.get("brace_time_1"),
             data.get("brace_time_2")
@@ -711,12 +711,12 @@ def save_brace_test(request, profile_id: int, data: dict = Body(...)):
     from django.forms.models import model_to_dict
     response_data = model_to_dict(test_result)
     response_data["team"] = test_result.team.name if test_result.team else None
-    response_data["profile_id"] = test_result.profile.id
+    response_data["person_id"] = test_result.person.id
     response_data["test_date"] = test_result.test_date
     return response_data
 
-@api.post("/hexagon-test/{profile_id}", response=TestResultSchema)
-def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/hexagon-test/{person_id}", response=TestResultSchema)
+def save_hexagon_test(request, person_id: int, data: dict = Body(...)):
     try:
         if (
             (data.get("hexagon_time_cw") is not None and not isinstance(data.get("hexagon_time_cw"), (int, float)))
@@ -726,15 +726,15 @@ def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
             return api.create_response(
                 request, {"detail": "Invalid times - each time must be a number or null"}, status=422
             )
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        person = get_object_or_404(Person, id=person_id)
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         if not active_test:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
         score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "hexagon",
             data.get("hexagon_time_cw"),
             data.get("hexagon_time_ccw")
@@ -746,7 +746,7 @@ def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             hexagon_time_cw=data.get("hexagon_time_cw"),
             hexagon_time_ccw=data.get("hexagon_time_ccw"),
@@ -759,7 +759,7 @@ def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -769,20 +769,20 @@ def save_hexagon_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/y-test/{profile_id}", response=TestResultSchema)
-def save_y_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/y-test/{person_id}", response=TestResultSchema)
+def save_y_test(request, person_id: int, data: dict = Body(...)):
     try:
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        person = get_object_or_404(Person, id=person_id)
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         if not active_test:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
         y_test_score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "y_test",
-            profile.height,
+            person.height,
             data.get("y_test_ll_front"),
             data.get("y_test_ll_left"),
             data.get("y_test_ll_right"),
@@ -797,7 +797,7 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
             data.get("y_test_ra_back")
         )
         y_test_index = calculate_y_test_index(
-            profile.height,
+            person.height,
             data.get("y_test_ll_front"),
             data.get("y_test_ll_left"),
             data.get("y_test_ll_right"),
@@ -818,7 +818,7 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             y_test_ll_front=data.get("y_test_ll_front"),
             y_test_ll_left=data.get("y_test_ll_left"),
@@ -842,7 +842,7 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -852,8 +852,8 @@ def save_y_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/medicimbal-test/{profile_id}", response=TestResultSchema)
-def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/medicimbal-test/{person_id}", response=TestResultSchema)
+def save_medicimbal_test(request, person_id: int, data: dict = Body(...)):
     try:
         for i in [1, 2, 3]:
             val = data.get(f"medicimbal_throw_{i}")
@@ -861,15 +861,15 @@ def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
                 return api.create_response(
                     request, {"detail": f"Throw {i} must be a number or null"}, status=422
                 )
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        person = get_object_or_404(Person, id=person_id)
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         if not active_test:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
         score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "medicimbal",
             data.get("medicimbal_throw_1"),
             data.get("medicimbal_throw_2"),
@@ -882,7 +882,7 @@ def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             medicimbal_throw_1=data.get("medicimbal_throw_1"),
             medicimbal_throw_2=data.get("medicimbal_throw_2"),
@@ -896,7 +896,7 @@ def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -906,11 +906,11 @@ def save_medicimbal_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/jet-test/{profile_id}", response=TestResultSchema)
-def save_jet_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/jet-test/{person_id}", response=TestResultSchema)
+def save_jet_test(request, person_id: int, data: dict = Body(...)):
     try:
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        person = get_object_or_404(Person, id=person_id)
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         if not active_test:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
@@ -924,8 +924,8 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
             )
         jet_distance = jet_laps * 40 + jet_sides * 10
         score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "jet",
             jet_distance
         )
@@ -936,7 +936,7 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             jet_laps=jet_laps,
             jet_sides=jet_sides,
@@ -950,7 +950,7 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -960,8 +960,8 @@ def save_jet_test(request, profile_id: int, data: dict = Body(...)):
             status=422
         )
 
-@api.post("/triple-jump-test/{profile_id}", response=TestResultSchema)
-def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
+@api.post("/triple-jump-test/{person_id}", response=TestResultSchema)
+def save_triple_jump_test(request, person_id: int, data: dict = Body(...)):
     try:
         for i in [1, 2, 3]:
             val = data.get(f"triple_jump_distance_{i}")
@@ -969,15 +969,15 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
                 return api.create_response(
                     request, {"detail": f"Jump distance {i} must be a number or null"}, status=422
                 )
-        profile = get_object_or_404(Profile, id=profile_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+        person = get_object_or_404(Person, id=person_id)
+        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
         if not active_test:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
         score = calculate_score(
-            profile.age,
-            profile.gender,
+            person.age,
+            person.gender,
             "triple_jump",
             data.get("triple_jump_distance_1"),
             data.get("triple_jump_distance_2"),
@@ -990,7 +990,7 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
                 status=422
             )
         test_result = get_or_create_test_result(
-            profile,
+            person,
             active_test,
             triple_jump_distance_1=data.get("triple_jump_distance_1"),
             triple_jump_distance_2=data.get("triple_jump_distance_2"),
@@ -1004,7 +1004,7 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
         from django.forms.models import model_to_dict
         response_data = model_to_dict(test_result)
         response_data["team"] = test_result.team.name if test_result.team else None
-        response_data["profile_id"] = test_result.profile.id
+        response_data["person_id"] = test_result.person.id
         response_data["test_date"] = test_result.test_date
         return response_data
     except Exception as e:
@@ -1015,13 +1015,13 @@ def save_triple_jump_test(request, profile_id: int, data: dict = Body(...)):
         )
 
 class BeepTestBatchItem(Schema):
-    profile_id: int
+    person_id: int
     beep_test_level: int
     beep_test_laps: int
     max_hr: Optional[int] = None
 
 class BeepTestBatchResponse(Schema):
-    profile_id: int
+    person_id: int
     success: bool
     result: Optional[TestResultSchema] = None
     error: Optional[str] = None
@@ -1031,31 +1031,31 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
     responses = []
     for item in items:
         try:
-            profile = get_object_or_404(Profile, id=item.profile_id)
-            active_test = ActiveTest.objects.filter(is_active=True, team=profile.team).first()
+            person = get_object_or_404(Person, id=item.person_id)
+            active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
             if not active_test:
                 responses.append(BeepTestBatchResponse(
-                    profile_id=item.profile_id,
+                    person_id=item.person_id,
                     success=False,
                     error="No active test found for this profile's team"
                 ))
                 continue
             beep_test_total_laps = calculate_beep_test_total_laps(item.beep_test_level, item.beep_test_laps)
             beep_test_score = calculate_score(
-                profile.age,
-                profile.gender,
+                person.age,
+                person.gender,
                 "beep_test",
                 beep_test_total_laps
             )
             if beep_test_score is None:
                 responses.append(BeepTestBatchResponse(
-                    profile_id=item.profile_id,
+                    person_id=item.person_id,
                     success=False,
                     error="Invalid beep test values - check input data"
                 ))
                 continue
             test_result = get_or_create_test_result(
-                profile,
+                person,
                 active_test,
                 beep_test_level=item.beep_test_level,
                 beep_test_laps=item.beep_test_laps,
@@ -1070,16 +1070,16 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
             from django.forms.models import model_to_dict
             response_data = model_to_dict(test_result)
             response_data["team"] = test_result.team.name if test_result.team else None
-            response_data["profile_id"] = test_result.profile.id
+            response_data["person_id"] = test_result.person.id
             response_data["test_date"] = test_result.test_date
             responses.append(BeepTestBatchResponse(
-                profile_id=item.profile_id,
+                person_id=item.person_id,
                 success=True,
                 result=response_data
             ))
         except Exception as e:
             responses.append(BeepTestBatchResponse(
-                profile_id=item.profile_id,
+                person_id=item.person_id,
                 success=False,
                 error=str(e)
             ))
@@ -1096,12 +1096,12 @@ def recalculate_scores_api(request):
     recalculate_scores(user)
     return {"success": True, "message": "Scores recalculated successfully."}
 
-@api.get("/results/profile/{profile_id}/active-test/{active_test_id}", response=TestResultSchema)
-def get_profile_active_test_result(request, profile_id: int, active_test_id: int):
+@api.get("/results/person/{person_id}/active-test/{active_test_id}", response=TestResultSchema)
+def get_person_active_test_result(request, person_id: int, active_test_id: int):
     """Get the latest test result for a specific profile and active test"""
     try:
         result = TestResult.objects.filter(
-            profile_id=profile_id,
+            person_id=person_id,
             active_test_id=active_test_id
         ).order_by('-test_date').first()
         
@@ -1115,7 +1115,7 @@ def get_profile_active_test_result(request, profile_id: int, active_test_id: int
         from django.forms.models import model_to_dict
         response_data = model_to_dict(result)
         response_data["team"] = result.team.name if result.team else None
-        response_data["profile_id"] = result.profile.id
+        response_data["person_id"] = result.person.id
         response_data["test_date"] = result.test_date
         return response_data
     except Exception as e:
@@ -1125,12 +1125,12 @@ def get_profile_active_test_result(request, profile_id: int, active_test_id: int
             status=422
         )
 
-@api.get("/results/profile/{profile_id}/test-type/{test_type}", response=TestResultSchema)
-def get_latest_profile_test_type_result(request, profile_id: int, test_type: str):
+@api.get("/results/person/{person_id}/test-type/{test_type}", response=TestResultSchema)
+def get_latest_person_test_type_result(request, person_id: int, test_type: str):
     """Get the latest test result for a specific profile and test type"""
     field_name = f"{test_type}_score"
     result = (
-        TestResult.objects.filter(profile_id=profile_id)
+        TestResult.objects.filter(person_id=person_id)
         .exclude(**{field_name: None})
         .order_by("-test_date")
         .first()
@@ -1140,7 +1140,7 @@ def get_latest_profile_test_type_result(request, profile_id: int, test_type: str
     from django.forms.models import model_to_dict
     response_data = model_to_dict(result)
     response_data["team"] = result.team.name if result.team else None
-    response_data["profile_id"] = result.profile.id
+    response_data["person_id"] = result.person.id
     response_data["test_date"] = result.test_date
     return response_data
 
@@ -1152,7 +1152,7 @@ def beep_test_has_results(request, data: ProfileIdsSchema):
     result = {}
     for pid in data.profile_ids:
         has_result = TestResult.objects.filter(
-            profile_id=pid
+            person_id=pid
         ).exclude(beep_test_score=None).exists()
         result[pid] = has_result
     return result
@@ -1163,7 +1163,7 @@ def beep_test_batch_latest(request, data: ProfileIdsSchema):
     for pid in data.profile_ids:
         field_name = "beep_test_score"
         latest = (
-            TestResult.objects.filter(profile_id=pid)
+            TestResult.objects.filter(person_id=pid)
             .exclude(**{field_name: None})
             .order_by("-test_date")
             .first()
@@ -1172,15 +1172,15 @@ def beep_test_batch_latest(request, data: ProfileIdsSchema):
             from django.forms.models import model_to_dict
             response_data = model_to_dict(latest)
             response_data["team"] = latest.team.name if latest.team else None
-            response_data["profile_id"] = latest.profile.id
+            response_data["person_id"] = latest.person.id
             response_data["test_date"] = latest.test_date
             result[pid] = response_data
         else:
             result[pid] = None
     return result
 
-def get_or_create_test_result(profile, active_test=None, **kwargs):
-    filters = {'profile': profile}
+def get_or_create_test_result(person, active_test=None, **kwargs):
+    filters = {'person': person}
     if active_test is not None:
         filters['active_test'] = active_test
     test_result, created = TestResult.objects.get_or_create(

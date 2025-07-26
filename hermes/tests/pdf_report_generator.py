@@ -17,9 +17,9 @@ from PIL import Image as PILImage
 from .models import TestResult
 
 
-def get_best_test_scores(profile, active_test, team):
+def get_best_test_scores(person, active_test, team):
     test_results = TestResult.objects.filter(
-        profile=profile, active_test=active_test, team=team
+        person=person, active_test=active_test, team=team
     )
     if not test_results:
         return None
@@ -72,9 +72,9 @@ def generate_test_results_pdf(test_results, output, adjudicator):
     if not isinstance(test_results, (list, tuple)):
         test_results = [test_results]
 
-    # Filter test results for profiles in adjudicator's teams
+    # Filter test results for persons in adjudicator's teams
     adjudicator_teams = adjudicator.teams.all()
-    test_results = [tr for tr in test_results if tr.profile.team in adjudicator_teams]
+    test_results = [tr for tr in test_results if tr.person.team in adjudicator_teams]
 
     doc = SimpleDocTemplate(
         output,
@@ -111,16 +111,16 @@ def generate_test_results_pdf(test_results, output, adjudicator):
         ],
     ]
 
-    # Get unique profiles and active test from filtered test results
-    profiles = {result.profile for result in test_results}
+    # Get unique persons and active test from filtered test results
+    persons = {result.person for result in test_results}
     active_test = test_results[0].active_test if test_results else None
 
-    for profile in profiles:
-        best_scores = get_best_test_scores(profile, active_test, profile.team)
+    for person in persons:
+        best_scores = get_best_test_scores(person, active_test, person.team)
         if best_scores:
             best_results_data.append(
                 [
-                    profile.full_name,
+                    person.full_name,
                     (
                         str(best_scores["Ladder"])
                         if best_scores["Ladder"] is not None
@@ -190,14 +190,14 @@ def generate_test_results_pdf(test_results, output, adjudicator):
     for test_result in test_results:
         # Add title for each person
         story.append(
-            Paragraph(f"Test Results for {test_result.profile.full_name}", title_style)
+            Paragraph(f"Test Results for {test_result.person.full_name}", title_style)
         )
         story.append(Spacer(1, 12))
 
-        # Get the last 3 test results for this profile
+        # Get the last 3 test results for this person
         last_three_results = list(
             TestResult.objects.filter(
-                profile=test_result.profile,
+                person=test_result.person,
                 active_test=test_result.active_test,
                 team=test_result.team,
             ).order_by("-test_date")[:3]
@@ -280,7 +280,7 @@ def generate_test_results_pdf(test_results, output, adjudicator):
         img = Image(jpg_buffer, width=7 * inch, height=6 * inch)
         story.append(img)
 
-        # Add page break between profiles (except for the last one)
+        # Add page break between persons (except for the last one)
         if test_result != test_results[-1]:
             story.append(PageBreak())
 

@@ -13,14 +13,14 @@ from django.shortcuts import redirect
 def recalculate_scores(user):
     # Get all TestResult objects for the user's team
     user_teams = user.teams.all()
-    test_results = TestResult.objects.filter(profile__team__in=user_teams)
+    test_results = TestResult.objects.filter(person__team__in=user_teams)
 
     # Recalculate scores for each test result
     for test_result in test_results:
         # Recalculate ladder score
         if test_result.ladder_time_1 and test_result.ladder_time_2:
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             time_1 = test_result.ladder_time_1
             time_2 = test_result.ladder_time_2
             test_result.ladder_score = calculate_score(
@@ -29,8 +29,8 @@ def recalculate_scores(user):
 
         # Recalculate brace score
         if test_result.brace_time_1 and test_result.brace_time_2:
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             time_1 = test_result.brace_time_1
             time_2 = test_result.brace_time_2
             test_result.brace_score = calculate_score(
@@ -39,8 +39,8 @@ def recalculate_scores(user):
 
         # Recalculate hexagon score
         if test_result.hexagon_time_cw and test_result.hexagon_time_ccw:
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             time_cw = test_result.hexagon_time_cw
             time_ccw = test_result.hexagon_time_ccw
             test_result.hexagon_score = calculate_score(
@@ -53,8 +53,8 @@ def recalculate_scores(user):
             and test_result.medicimbal_throw_2
             and test_result.medicimbal_throw_3
         ):
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             throw_1 = test_result.medicimbal_throw_1
             throw_2 = test_result.medicimbal_throw_2
             throw_3 = test_result.medicimbal_throw_3
@@ -64,8 +64,8 @@ def recalculate_scores(user):
 
         # Recalculate jet score
         if test_result.jet_laps and test_result.jet_sides:
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             laps = test_result.jet_laps
             sides = test_result.jet_sides
             jet_distance = laps * 40 + sides * 10
@@ -87,9 +87,9 @@ def recalculate_scores(user):
             and test_result.y_test_ra_front
             and test_result.y_test_ra_back
         ):
-            age = test_result.profile.age
-            gender = test_result.profile.gender
-            height = test_result.profile.height
+            age = test_result.person.age
+            gender = test_result.person.gender
+            height = test_result.person.height
             ll_front = test_result.y_test_ll_front
             ll_left = test_result.y_test_ll_left
             ll_right = test_result.y_test_ll_right
@@ -139,8 +139,8 @@ def recalculate_scores(user):
 
         # Recalculate beep test score
         if test_result.beep_test_laps and test_result.beep_test_level:
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             laps = test_result.beep_test_laps
             level = test_result.beep_test_level
             total_laps = calculate_beep_test_total_laps(level, laps)
@@ -155,8 +155,8 @@ def recalculate_scores(user):
             and test_result.triple_jump_distance_2
             and test_result.triple_jump_distance_3
         ):
-            age = test_result.profile.age
-            gender = test_result.profile.gender
+            age = test_result.person.age
+            gender = test_result.person.gender
             jump_1 = test_result.triple_jump_distance_1
             jump_2 = test_result.triple_jump_distance_2
             jump_3 = test_result.triple_jump_distance_3
