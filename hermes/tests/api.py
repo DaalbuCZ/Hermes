@@ -1,7 +1,7 @@
 from ninja import NinjaAPI, Schema, Body  # Add this import
 from typing import List, Optional, Dict
 from datetime import date, datetime, timedelta
-from .models import Person, TestResult, ActiveTest, Team
+from .models import Person, TestResult, Event, Team
 from django.shortcuts import get_object_or_404
 from ninja.security import HttpBearer
 import jwt
@@ -134,7 +134,7 @@ class TeamSchema(Schema):
 
 
 # Additional schemas
-class ActiveTestSchema(Schema):
+class EventSchema(Schema):
     id: int
     name: str
     is_active: bool
@@ -252,11 +252,9 @@ def create_person(request, person: PersonSchema):
     person_data["team_id"] = team_id
     new_person = Person.objects.create(**person_data)
     # Find the active test for the new person's team
-    active_test = None
-    if new_person.team:
-        active_test = ActiveTest.objects.filter(is_active=True, team=new_person.team).first()
+    event = Event.objects.filter(is_active=True, team=new_person.team).first()
     # Create a blank TestResult for the new person, with the active test if available
-    TestResult.objects.create(person=new_person, team=new_person.team, active_test=active_test)
+    TestResult.objects.create(person=new_person, team=new_person.team, event=event)
     return new_person
 
 
@@ -364,52 +362,52 @@ def get_person_aggregate_scores(request, person_id: int):
 
 
 # Active test management endpoints
-@api.get("/active-tests", response=List[ActiveTestSchema])
-def get_active_tests(request):
+@api.get("/events", response=List[EventSchema])
+def get_events(request):
     """Get all active tests, filtered by user's teams if not superuser"""
     if request.auth.is_superuser:
-        return ActiveTest.objects.all()
-    return ActiveTest.objects.filter(team__in=request.auth.teams.all())
+        return Event.objects.all()
+    return Event.objects.filter(team__in=request.auth.teams.all())
 
 
-@api.get("/active-tests/{team_id}", response=List[ActiveTestSchema])
+@api.get("/events/{team_id}", response=List[EventSchema])
 def get_team_active_tests(request, team_id: int):
     """Get active tests for a specific team"""
-    return ActiveTest.objects.filter(team_id=team_id, is_active=True)
+    return Event.objects.filter(team_id=team_id, is_active=True)
 
 
-@api.post("/active-tests", response=ActiveTestSchema)
-def create_active_test(request, active_test: ActiveTestSchema):
+@api.post("/events", response=EventSchema)
+def create_event(request, event: EventSchema):
     """Create a new active test"""
     # Deactivate all other tests for the team if this one is active
-    if active_test.is_active and active_test.team_id:
-        ActiveTest.objects.filter(team_id=active_test.team_id, is_active=True).update(
+    if event.is_active and event.team_id:
+        Event.objects.filter(team_id=event.team_id, is_active=True).update(
             is_active=False
         )
-    return ActiveTest.objects.create(**active_test.dict())
+    return Event.objects.create(**event.dict())
 
 
-@api.put("/active-tests/{test_id}", response=ActiveTestSchema)
-def update_active_test(request, test_id: int, active_test: ActiveTestSchema):
+@api.put("/events/{event_id}", response=EventSchema)
+def update_event(request, event_id: int, event: EventSchema):
     """Update an active test"""
-    test_obj = get_object_or_404(ActiveTest, id=test_id)
-    if active_test.is_active and active_test.team_id:
+    event_obj = get_object_or_404(Event, id=event_id)
+    if event.is_active and event.team_id:
         # Deactivate other tests only if we're activating this one
-        if not test_obj.is_active:
-            ActiveTest.objects.filter(
-                team_id=active_test.team_id, is_active=True
+        if not event_obj.is_active:
+            Event.objects.filter(
+                team_id=event.team_id, is_active=True
             ).update(is_active=False)
-    for key, value in active_test.dict(exclude_unset=True).items():
-        setattr(test_obj, key, value)
-    test_obj.save()
-    return test_obj
+    for key, value in event.dict(exclude_unset=True).items():
+        setattr(event_obj, key, value)
+    event_obj.save()
+    return event_obj
 
 
-@api.delete("/active-tests/{test_id}")
-def delete_active_test(request, test_id: int):
+@api.delete("/events/{event_id}")
+def delete_event(request, event_id: int):
     """Delete an active test"""
-    test = get_object_or_404(ActiveTest, id=test_id)
-    test.delete()
+    event = get_object_or_404(Event, id=event_id)
+    event.delete()
     return {"success": True}
 
 
@@ -622,10 +620,10 @@ def save_ladder_test(request, person_id: int, data: dict = Body(...)):
 
         person = get_object_or_404(Person, id=person_id)
         # print(f"Profile found - ID: {profile.id}, Age: {profile.age}, Gender: {profile.gender}, Team: {profile.team}")
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
+        event = Event.objects.filter(is_active=True, team=person.team).first()
         # print(f"Active test found: {active_test is not None}")
 
-        if not active_test:
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -648,13 +646,13 @@ def save_ladder_test(request, person_id: int, data: dict = Body(...)):
 
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             ladder_time_1=data.get("ladder_time_1"),
             ladder_time_2=data.get("ladder_time_2"),
             ladder_score=score,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
 
         test_result.save()
@@ -675,9 +673,9 @@ def save_ladder_test(request, person_id: int, data: dict = Body(...)):
 @api.post("/brace-test/{person_id}", response=TestResultSchema)
 def save_brace_test(request, person_id: int, data: dict = Body(...)):
     person = get_object_or_404(Person, id=person_id)
-    active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
+    event = Event.objects.filter(is_active=True, team=person.team).first()
     
-    if not active_test:
+    if not event:
         return api.create_response(
             request, {"detail": "No active test found for this profile's team"}, status=400
         )
@@ -693,7 +691,7 @@ def save_brace_test(request, person_id: int, data: dict = Body(...)):
 
     test_result = get_or_create_test_result(
         person,
-        active_test,
+        event,
         brace_time_1=data.get("brace_time_1"),
         brace_time_2=data.get("brace_time_2"),
         brace_score=calculate_score(
@@ -703,9 +701,9 @@ def save_brace_test(request, person_id: int, data: dict = Body(...)):
             data.get("brace_time_1"),
             data.get("brace_time_2")
         ),
-        test_name=active_test.name,
+        test_name=event.name,
         test_date=date.today(),
-        team=active_test.team,
+        team=event.team,
     )
     test_result.save()
     from django.forms.models import model_to_dict
@@ -727,8 +725,8 @@ def save_hexagon_test(request, person_id: int, data: dict = Body(...)):
                 request, {"detail": "Invalid times - each time must be a number or null"}, status=422
             )
         person = get_object_or_404(Person, id=person_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-        if not active_test:
+        event = Event.objects.filter(is_active=True, team=person.team).first()
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -747,13 +745,13 @@ def save_hexagon_test(request, person_id: int, data: dict = Body(...)):
             )
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             hexagon_time_cw=data.get("hexagon_time_cw"),
             hexagon_time_ccw=data.get("hexagon_time_ccw"),
             hexagon_score=score,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -773,8 +771,8 @@ def save_hexagon_test(request, person_id: int, data: dict = Body(...)):
 def save_y_test(request, person_id: int, data: dict = Body(...)):
     try:
         person = get_object_or_404(Person, id=person_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-        if not active_test:
+        event = Event.objects.filter(is_active=True, team=person.team).first()
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -819,7 +817,7 @@ def save_y_test(request, person_id: int, data: dict = Body(...)):
             )
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             y_test_ll_front=data.get("y_test_ll_front"),
             y_test_ll_left=data.get("y_test_ll_left"),
             y_test_ll_right=data.get("y_test_ll_right"),
@@ -834,9 +832,9 @@ def save_y_test(request, person_id: int, data: dict = Body(...)):
             y_test_ra_back=data.get("y_test_ra_back"),
             y_test_score=y_test_score,
             y_test_index=y_test_index,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -862,8 +860,8 @@ def save_medicimbal_test(request, person_id: int, data: dict = Body(...)):
                     request, {"detail": f"Throw {i} must be a number or null"}, status=422
                 )
         person = get_object_or_404(Person, id=person_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-        if not active_test:
+        event = Event.objects.filter(is_active=True, team=person.team).first()
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -883,14 +881,14 @@ def save_medicimbal_test(request, person_id: int, data: dict = Body(...)):
             )
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             medicimbal_throw_1=data.get("medicimbal_throw_1"),
             medicimbal_throw_2=data.get("medicimbal_throw_2"),
             medicimbal_throw_3=data.get("medicimbal_throw_3"),
             medicimbal_score=score,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -910,8 +908,8 @@ def save_medicimbal_test(request, person_id: int, data: dict = Body(...)):
 def save_jet_test(request, person_id: int, data: dict = Body(...)):
     try:
         person = get_object_or_404(Person, id=person_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-        if not active_test:
+        event = Event.objects.filter(is_active=True, team=person.team).first()
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -937,14 +935,14 @@ def save_jet_test(request, person_id: int, data: dict = Body(...)):
             )
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             jet_laps=jet_laps,
             jet_sides=jet_sides,
             jet_distance=jet_distance,
             jet_score=score,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -970,8 +968,8 @@ def save_triple_jump_test(request, person_id: int, data: dict = Body(...)):
                     request, {"detail": f"Jump distance {i} must be a number or null"}, status=422
                 )
         person = get_object_or_404(Person, id=person_id)
-        active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-        if not active_test:
+        event = Event.objects.filter(is_active=True, team=person.team).first()
+        if not event:
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
@@ -991,14 +989,14 @@ def save_triple_jump_test(request, person_id: int, data: dict = Body(...)):
             )
         test_result = get_or_create_test_result(
             person,
-            active_test,
+            event,
             triple_jump_distance_1=data.get("triple_jump_distance_1"),
             triple_jump_distance_2=data.get("triple_jump_distance_2"),
             triple_jump_distance_3=data.get("triple_jump_distance_3"),
             triple_jump_score=score,
-            test_name=active_test.name,
+            test_name=event.name,
             test_date=date.today(),
-            team=active_test.team,
+            team=event.team,
         )
         test_result.save()
         from django.forms.models import model_to_dict
@@ -1032,8 +1030,8 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
     for item in items:
         try:
             person = get_object_or_404(Person, id=item.person_id)
-            active_test = ActiveTest.objects.filter(is_active=True, team=person.team).first()
-            if not active_test:
+            event = Event.objects.filter(is_active=True, team=person.team).first()
+            if not event:
                 responses.append(BeepTestBatchResponse(
                     person_id=item.person_id,
                     success=False,
@@ -1056,15 +1054,15 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
                 continue
             test_result = get_or_create_test_result(
                 person,
-                active_test,
+                event,
                 beep_test_level=item.beep_test_level,
                 beep_test_laps=item.beep_test_laps,
                 beep_test_total_laps=beep_test_total_laps,
                 max_hr=item.max_hr,
                 beep_test_score=beep_test_score,
-                test_name=active_test.name,
+                test_name=event.name,
                 test_date=date.today(),
-                team=active_test.team,
+                team=event.team,
             )
             test_result.save()
             from django.forms.models import model_to_dict
@@ -1096,19 +1094,19 @@ def recalculate_scores_api(request):
     recalculate_scores(user)
     return {"success": True, "message": "Scores recalculated successfully."}
 
-@api.get("/results/person/{person_id}/active-test/{active_test_id}", response=TestResultSchema)
-def get_person_active_test_result(request, person_id: int, active_test_id: int):
-    """Get the latest test result for a specific profile and active test"""
+@api.get("/results/person/{person_id}/event/{event_id}", response=TestResultSchema)
+def get_person_event_result(request, person_id: int, event_id: int):
+    """Get the latest test result for a specific profile and event"""
     try:
         result = TestResult.objects.filter(
             person_id=person_id,
-            active_test_id=active_test_id
+            event_id=event_id
         ).order_by('-test_date').first()
         
         if not result:
             return api.create_response(
                 request,
-                {"detail": "No test result found for this profile and active test"},
+                {"detail": "No test result found for this profile and event"},
                 status=404
             )
             
@@ -1179,10 +1177,10 @@ def beep_test_batch_latest(request, data: ProfileIdsSchema):
             result[pid] = None
     return result
 
-def get_or_create_test_result(person, active_test=None, **kwargs):
+def get_or_create_test_result(person, event=None, **kwargs):
     filters = {'person': person}
-    if active_test is not None:
-        filters['active_test'] = active_test
+    if event is not None:
+        filters['event'] = event
     test_result, created = TestResult.objects.get_or_create(
         **filters,
         defaults=kwargs,

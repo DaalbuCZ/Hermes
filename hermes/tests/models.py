@@ -12,13 +12,13 @@ class Team(models.Model):
         return self.name
 
 
-class ActiveTest(models.Model):
+class Event(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(
-        "auth.User", on_delete=models.SET_NULL, null=True, related_name="created_tests"
+        "auth.User", on_delete=models.SET_NULL, null=True, related_name="created_events"
     )
 
     def __str__(self):
@@ -148,8 +148,8 @@ class Person(models.Model):
 
 class TestResult(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    active_test = models.ForeignKey(
-        ActiveTest,
+    event = models.ForeignKey(
+        Event,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

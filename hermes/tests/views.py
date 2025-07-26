@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404, HttpResponse
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from io import BytesIO
-from .models import ActiveTest, Team
+from .models import Event, Team
 from django.contrib.auth.models import User, Group
 from .radarplot_generator import generate_radar_plot_from_scores
 from .pdf_report_generator import generate_test_results_pdf
