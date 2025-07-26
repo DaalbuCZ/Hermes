@@ -23,7 +23,7 @@ from tests.api import api
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("tests/", include("tests.urls")),
-    path("", views.index, name="index"),
+    # path("", views.index, name="index"),  # Removed, view no longer exists
     path("unicorn/", include("django_unicorn.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", api.urls),  # Add the API urls
