@@ -55,6 +55,8 @@ class PersonSchema(Schema):
     weight: float
     team_id: int | None = None  # Optional for input
     age: int | None = None      # Optional for input
+    gender_required: bool | None = None
+    date_of_birth_required: bool | None = None
 
 
 class TestResultSchema(Schema):
@@ -177,6 +179,11 @@ class PersonMeasurementCreateSchema(Schema):
     height: float
     weight: float
     notes: str | None = None
+
+
+class PersonDataCollectionSchema(Schema):
+    date_of_birth: date
+    gender: str
 
 
 def is_superadmin(user):
@@ -1331,3 +1338,44 @@ def delete_person_measurement(request, person_id: int, measurement_id: int):
     measurement = get_object_or_404(PersonMeasurement, id=measurement_id, person=person)
     measurement.delete()
     return {"success": True}
+
+
+@api.get("/persons/{person_id}/missing-data")
+def check_missing_data(request, person_id: int):
+    """Check if a person has missing required data"""
+    person = get_object_or_404(Person, id=person_id)
+    
+    missing_data = {}
+    
+    if person.gender_required and not person.gender:
+        missing_data["gender"] = True
+    
+    if person.date_of_birth_required and not person.date_of_birth:
+        missing_data["date_of_birth"] = True
+    
+    return {
+        "has_missing_data": bool(missing_data),
+        "missing_data": missing_data
+    }
+
+
+@api.post("/persons/{person_id}/collect-data")
+def collect_missing_data(request, person_id: int, data: PersonDataCollectionSchema):
+    """Collect missing gender and date of birth data"""
+    person = get_object_or_404(Person, id=person_id)
+    
+    # Update the person with the collected data
+    if data.gender:
+        person.gender = data.gender
+        person.gender_required = False
+    
+    if data.date_of_birth:
+        person.date_of_birth = data.date_of_birth
+        person.date_of_birth_required = False
+    
+    person.save()
+    
+    return {
+        "success": True,
+        "message": "Data collected successfully"
+    }

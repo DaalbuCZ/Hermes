@@ -47,6 +47,8 @@ class Person(models.Model):
         choices=GENDER_CHOICES,
         default="M",
     )
+    gender_required = models.BooleanField(default=False)
+    date_of_birth_required = models.BooleanField(default=False)
 
     @property
     def age(self):
