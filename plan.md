@@ -248,8 +248,9 @@ This plan outlines the implementation of all requested features for the Hermes s
 ### 10.2 Frontend Changes
 
 - **New Component**: `PersonDataCollection.tsx`
-- Modal/dialog for collecting missing data
+- Dialog/drawer (device dependent from shadcn responsive dialog) for collecting missing data
 - Integration with test forms
+- Should automatically be shown if the person has missing data
 - Validation and error handling
 
 ### 10.3 Flow Implementation

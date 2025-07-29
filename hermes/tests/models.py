@@ -28,9 +28,9 @@ class Event(models.Model):
 class Person(models.Model):
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
-    date_of_birth = models.DateField()
-    weight = models.FloatField()
-    height = models.FloatField()
+    date_of_birth = models.DateField(null=True, blank=True)
+    weight = models.FloatField(null=True, blank=True)
+    height = models.FloatField(null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(
         "auth.User",
@@ -45,13 +45,16 @@ class Person(models.Model):
     gender = models.CharField(
         max_length=1,
         choices=GENDER_CHOICES,
-        default="M",
+        null=True,
+        blank=True,
     )
     gender_required = models.BooleanField(default=False)
     date_of_birth_required = models.BooleanField(default=False)
 
     @property
     def age(self):
+        if not self.date_of_birth:
+            return None
         today = date.today()
         return (
             today.year

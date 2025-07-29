@@ -49,10 +49,10 @@ class PersonSchema(Schema):
     id: int | None = None  # Make id optional for creation
     name: str
     surname: str
-    date_of_birth: date
-    gender: str
-    height: float
-    weight: float
+    date_of_birth: date | None = None
+    gender: str | None = None
+    height: float | None = None
+    weight: float | None = None
     team_id: int | None = None  # Optional for input
     age: int | None = None      # Optional for input
     gender_required: bool | None = None
@@ -226,6 +226,8 @@ def get_people(request):
             "weight": p.weight,
             "team_id": p.team.id if p.team else None,
             "age": p.age,
+            "gender_required": p.gender_required,
+            "date_of_birth_required": p.date_of_birth_required,
         }
         for p in Person.objects.all()
     ]
@@ -270,7 +272,7 @@ def get_team_results(request, team_id: int):
 # Person endpoints
 @api.post("/people", response=PersonSchema)
 def create_person(request, person: PersonSchema):
-    person_data = person.dict(exclude={"id", "age", "team_id"})  # Exclude id, age, team_id from input
+    person_data = person.dict(exclude={"id", "age", "team_id", "gender_required", "date_of_birth_required"})  # Exclude fields that should use defaults
     # Set team_id from the authenticated user if available
     team_id = None
     if hasattr(request.auth, "teams") and request.auth.teams.exists():
@@ -1347,10 +1349,12 @@ def check_missing_data(request, person_id: int):
     
     missing_data = {}
     
-    if person.gender_required and not person.gender:
+    # Check if gender is missing (either required or just missing)
+    if (person.gender_required or not person.gender) and not person.gender:
         missing_data["gender"] = True
     
-    if person.date_of_birth_required and not person.date_of_birth:
+    # Check if date of birth is missing (either required or just missing)
+    if (person.date_of_birth_required or not person.date_of_birth) and not person.date_of_birth:
         missing_data["date_of_birth"] = True
     
     return {
