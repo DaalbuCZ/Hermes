@@ -182,8 +182,8 @@ class PersonMeasurementCreateSchema(Schema):
 
 
 class PersonDataCollectionSchema(Schema):
-    date_of_birth: date
-    gender: str
+    date_of_birth: date | None = None
+    gender: str | None = None
 
 
 def is_superadmin(user):
