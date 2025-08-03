@@ -103,8 +103,8 @@ def get_person_data(request):
     person = get_object_or_404(Person, id=person_id)
     data = {
         "age": person.age,
-        "height": person.height,
-        "weight": person.weight,
+        "height": person.latest_height,
+        "weight": person.latest_weight,
         # Include other fields as needed
     }
     return JsonResponse(data)

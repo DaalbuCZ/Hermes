@@ -222,8 +222,8 @@ def get_people(request):
             "surname": p.surname,
             "date_of_birth": p.date_of_birth,
             "gender": p.gender,
-            "height": p.height,
-            "weight": p.weight,
+            "height": p.latest_height,
+            "weight": p.latest_weight,
             "team_id": p.team.id if p.team else None,
             "age": p.age,
             "gender_required": p.gender_required,
@@ -808,7 +808,7 @@ def save_y_test(request, person_id: int, data: dict = Body(...)):
             person.age,
             person.gender,
             "y_test",
-            person.height,
+            person.latest_height,
             data.get("y_test_ll_front"),
             data.get("y_test_ll_left"),
             data.get("y_test_ll_right"),
@@ -823,7 +823,7 @@ def save_y_test(request, person_id: int, data: dict = Body(...)):
             data.get("y_test_ra_back")
         )
         y_test_index = calculate_y_test_index(
-            person.height,
+            person.latest_height,
             data.get("y_test_ll_front"),
             data.get("y_test_ll_left"),
             data.get("y_test_ll_right"),

@@ -153,6 +153,22 @@ class Person(models.Model):
         return TestResult.objects.filter(person=self).order_by("-test_date")[:3]
 
     @property
+    def latest_height(self):
+        """Get the latest height from measurements, fallback to person's base height"""
+        latest_measurement = self.get_latest_measurement()
+        if latest_measurement:
+            return latest_measurement.height
+        return self.height
+
+    @property
+    def latest_weight(self):
+        """Get the latest weight from measurements, fallback to person's base weight"""
+        latest_measurement = self.get_latest_measurement()
+        if latest_measurement:
+            return latest_measurement.weight
+        return self.weight
+
+    @property
     def full_name(self):
         return f"{self.surname} {self.name}"
 

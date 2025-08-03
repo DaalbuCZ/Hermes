@@ -89,7 +89,7 @@ def recalculate_scores(user):
         ):
             age = test_result.person.age
             gender = test_result.person.gender
-            height = test_result.person.height
+            height = test_result.person.latest_height
             ll_front = test_result.y_test_ll_front
             ll_left = test_result.y_test_ll_left
             ll_right = test_result.y_test_ll_right
