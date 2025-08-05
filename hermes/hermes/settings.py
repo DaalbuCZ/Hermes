@@ -24,12 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-bsekwpodnnlf@ngh(vj6u8c)dhr58ta%f&boi-k$1j^wn*ys(e"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-bsekwpodnnlf@ngh(vj6u8c)dhr58ta%f&boi-k$1j^wn*ys(e")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ.get("DEBUG", default=0))
 
-ALLOWED_HOSTS = ["0.0.0.0", "127.0.0.1", "localhost", "192.168.0.150"]
+# 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a , between each.
+# For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1,[::1]'
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,0.0.0.0").split(",")
 
 
 # Application definition
@@ -85,18 +87,16 @@ WSGI_APPLICATION = "hermes.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    # "default": {
-    #     "ENGINE": "django.db.backends.sqlite3",
-    #     "NAME": BASE_DIR / "db.sqlite3",
-    # },
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
-    },
+        "ENGINE": "django.db.backends.{}".format(
+            os.getenv('DATABASE_ENGINE', 'postgresql')
+        ),
+        "NAME": os.getenv('DATABASE_NAME', 'hermes'),
+        "USER": os.getenv('DATABASE_USERNAME', 'hermesuser'),
+        "PASSWORD": os.getenv('DATABASE_PASSWORD', 'password'),
+        "HOST": os.getenv('DATABASE_HOST', '127.0.0.1'),
+        "PORT": os.getenv('DATABASE_PORT', '5432'),
+    }
 }
 
 
