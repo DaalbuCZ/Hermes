@@ -1,0 +1,77 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-hermes_db}
+      POSTGRES_USER: ${DATABASE_USERNAME:-hermes_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - hermes/env.example
+    networks:
+      - hermes-network
+
+  # Django Backend (Development)
+  django-web:
+    build:
+      context: ./hermes
+      dockerfile: Dockerfile
+    container_name: hermes-django-dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-your-secret-key-here}
+      DEBUG: ${DEBUG:-True}
+      DJANGO_LOGLEVEL: ${DJANGO_LOGLEVEL:-DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      DATABASE_ENGINE: ${DATABASE_ENGINE:-postgresql}
+      DATABASE_NAME: ${DATABASE_NAME:-hermes_db}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-hermes_user}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+    env_file:
+      - hermes/env.example
+    volumes:
+      - ./hermes:/app
+      - static_volume:/app/static
+    networks:
+      - hermes-network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  # React Frontend (Development with Hot Reload)
+  react-frontend:
+    build:
+      context: ../OlympReact/hermes
+      dockerfile: Dockerfile.dev
+    container_name: hermes-react-dev
+    ports:
+      - "5173:5173"
+    depends_on:
+      - django-web
+    volumes:
+      - ../OlympReact/hermes:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    networks:
+      - hermes-network
+    command: pnpm dev
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  hermes-network:
+    driver: bridge

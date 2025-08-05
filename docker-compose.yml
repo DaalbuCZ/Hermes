@@ -1,0 +1,69 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-hermes_db}
+      POSTGRES_USER: ${DATABASE_USERNAME:-hermes_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - hermes/env.example
+    networks:
+      - hermes-network
+
+  # Django Backend
+  django-web:
+    build:
+      context: ./hermes
+      dockerfile: Dockerfile
+    container_name: hermes-django
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-your-secret-key-here}
+      DEBUG: ${DEBUG:-False}
+      DJANGO_LOGLEVEL: ${DJANGO_LOGLEVEL:-INFO}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_ENGINE: ${DATABASE_ENGINE:-postgresql}
+      DATABASE_NAME: ${DATABASE_NAME:-hermes_db}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-hermes_user}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+    env_file:
+      - hermes/env.example
+    volumes:
+      - static_volume:/app/static
+    networks:
+      - hermes-network
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 hermes.wsgi:application"
+
+  # React Frontend
+  react-frontend:
+    build:
+      context: ../OlympReact/hermes
+      dockerfile: Dockerfile
+    container_name: hermes-react
+    ports:
+      - "3000:80"
+    depends_on:
+      - django-web
+    networks:
+      - hermes-network
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks:
+  hermes-network:
+    driver: bridge
