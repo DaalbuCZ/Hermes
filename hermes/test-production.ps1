@@ -59,5 +59,5 @@ try {
 Write-Host "`n🎉 Production Environment Test Complete!" -ForegroundColor Green
 Write-Host "`nAccess your application:" -ForegroundColor Cyan
 Write-Host "- Main App: http://localhost:8000" -ForegroundColor White
-Write-Host "- Admin: http://localhost:8000/admin/ (admin / HermesAdmin2024!)" -ForegroundColor White
+Write-Host "- Admin: http://localhost:8000/admin/" -ForegroundColor White
 Write-Host "- API Docs: http://localhost:8000/api/docs" -ForegroundColor White 

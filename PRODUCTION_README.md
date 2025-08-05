@@ -1,35 +1,98 @@
-# Hermes Production Deployment Guide
+# Production Deployment Guide for Linux VPS
 
-This guide covers the production-ready deployment of the Hermes application with security, monitoring, and performance optimizations.
+This guide provides comprehensive instructions for deploying the Hermes application to a Linux VPS in production.
 
-## 🚀 Quick Start
+## Table of Contents
 
-### 1. Prerequisites
+1. [Prerequisites](#prerequisites)
+2. [Quick Start](#quick-start)
+3. [Environment Configuration](#environment-configuration)
+4. [SSL Certificates](#ssl-certificates)
+5. [Architecture Overview](#architecture-overview)
+6. [Monitoring Setup](#monitoring-setup)
+7. [Security Features](#security-features)
+8. [Deployment Commands](#deployment-commands)
+9. [Maintenance](#maintenance)
+10. [Troubleshooting](#troubleshooting)
 
-- Docker and Docker Compose installed
-- Domain name configured
-- SSL certificates (recommended)
-- Production server with sufficient resources
+## Prerequisites
 
-### 2. Initial Setup
+### System Requirements
 
-```powershell
-# Run the setup script
-.\setup-docker.ps1
+- **OS**: Ubuntu 20.04+ or CentOS 8+ (recommended)
+- **RAM**: Minimum 2GB, recommended 4GB+
+- **Storage**: Minimum 10GB free space
+- **CPU**: 2+ cores recommended
+- **Network**: Public IP with ports 80 and 443 open
 
-# Start production environment
-.\docker-startup.ps1 production
+### Software Requirements
+
+- Docker 20.10+
+- Docker Compose 2.0+
+- Git
+- curl, wget, nano/vim
+
+### Installation Commands
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y  # Ubuntu/Debian
+# OR
+sudo yum update -y  # CentOS/RHEL
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Log out and log back in for Docker group changes to take effect
 ```
 
-## 🔧 Production Configuration
+## Quick Start
 
-### Environment Variables
+1. **Clone and setup**:
+
+```bash
+git clone <your-repo-url>
+cd <project-directory>
+chmod +x setup-docker.sh
+./setup-docker.sh
+```
+
+2. **Configure environment**:
+
+```bash
+nano hermes/env.production
+# Update with your domain, database credentials, and secret key
+```
+
+3. **Set up SSL certificates** (see [SSL Certificates](#ssl-certificates) section)
+
+4. **Deploy to production**:
+
+```bash
+./docker-startup.sh production
+```
+
+5. **Check status**:
+
+```bash
+./docker-startup.sh status
+```
+
+## Environment Configuration
+
+### Production Environment File
 
 Edit `hermes/env.production` with your production settings:
 
 ```env
 # Django Settings
-DJANGO_SECRET_KEY=your-very-long-secure-secret-key-here
+DJANGO_SECRET_KEY=your-secure-secret-key-here
 DEBUG=False
 DJANGO_LOGLEVEL=WARNING
 DJANGO_ALLOWED_HOSTS=your-domain.com,www.your-domain.com
@@ -38,7 +101,9 @@ DJANGO_ALLOWED_HOSTS=your-domain.com,www.your-domain.com
 DATABASE_ENGINE=postgresql
 DATABASE_NAME=hermes_production
 DATABASE_USERNAME=hermes_prod_user
-DATABASE_PASSWORD=your-secure-database-password
+DATABASE_PASSWORD=your-secure-password
+DATABASE_HOST=db
+DATABASE_PORT=5432
 
 # Security Settings
 CSRF_TRUSTED_ORIGINS=https://your-domain.com,https://www.your-domain.com
@@ -46,359 +111,388 @@ SECURE_SSL_REDIRECT=True
 SECURE_HSTS_SECONDS=31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS=True
 SECURE_HSTS_PRELOAD=True
+SECURE_BROWSER_XSS_FILTER=True
+SECURE_CONTENT_TYPE_NOSNIFF=True
+X_FRAME_OPTIONS=DENY
 
-# Email Settings
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.your-email-provider.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@your-domain.com
-EMAIL_HOST_PASSWORD=your-email-password
+# Static Files
+STATIC_ROOT=/app/static
+MEDIA_ROOT=/app/media
 
-# Redis Settings
-REDIS_PASSWORD=your-secure-redis-password
-
-# Monitoring
-GRAFANA_PASSWORD=your-secure-grafana-password
+# Logging
+DJANGO_LOG_LEVEL=WARNING
+DJANGO_LOG_FILE=/app/logs/django.log
 ```
 
-### SSL Certificates
+### Important Security Notes
 
-Place your SSL certificates in `nginx/ssl/`:
+- Generate a strong `DJANGO_SECRET_KEY` (at least 50 characters)
+- Use strong database passwords
+- Set `DEBUG=False` for production
+- Configure `DJANGO_ALLOWED_HOSTS` with your actual domain
+- Set `CSRF_TRUSTED_ORIGINS` with your HTTPS URLs
 
-- `cert.pem` - SSL certificate
-- `key.pem` - Private key
+## SSL Certificates
 
-For Let's Encrypt certificates:
+### Option 1: Let's Encrypt (Recommended)
 
 ```bash
 # Install certbot
-sudo apt-get install certbot
+sudo apt install certbot  # Ubuntu/Debian
+# OR
+sudo yum install certbot  # CentOS/RHEL
 
-# Generate certificate
-sudo certbot certonly --standalone -d your-domain.com
+# Get certificates
+sudo certbot certonly --standalone -d your-domain.com -d www.your-domain.com
 
-# Copy certificates
+# Copy certificates to project
 sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem nginx/ssl/cert.pem
 sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem nginx/ssl/key.pem
+sudo chown $USER:$USER nginx/ssl/*.pem
+chmod 644 nginx/ssl/cert.pem
+chmod 600 nginx/ssl/key.pem
+
+# Set up auto-renewal
+sudo crontab -e
+# Add: 0 12 * * * /usr/bin/certbot renew --quiet && cp /etc/letsencrypt/live/your-domain.com/fullchain.pem /path/to/project/nginx/ssl/cert.pem && cp /etc/letsencrypt/live/your-domain.com/privkey.pem /path/to/project/nginx/ssl/key.pem && docker-compose -f /path/to/project/docker-compose.prod.yml restart nginx
 ```
 
-## 🏗️ Architecture
+### Option 2: Self-Signed (Testing Only)
+
+```bash
+mkdir -p nginx/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout nginx/ssl/key.pem -out nginx/ssl/cert.pem
+chmod 644 nginx/ssl/cert.pem
+chmod 600 nginx/ssl/key.pem
+```
+
+### Option 3: Commercial Certificates
+
+Place your `cert.pem` and `key.pem` files in the `nginx/ssl/` directory with proper permissions.
+
+## Architecture Overview
 
 ```
 Internet
     ↓
-Nginx Reverse Proxy (SSL Termination)
+[Firewall/Router] (Ports 80, 443)
     ↓
-React Frontend (Port 80/443)
-    ↓ (proxies /api/* and /admin/*)
-Django Backend (Port 8000)
+[Nginx Reverse Proxy] (SSL termination, load balancing)
     ↓
-PostgreSQL Database (Port 5432)
-Redis Cache (Port 6379)
-    ↓
-Prometheus Monitoring (Port 9090)
-Grafana Dashboard (Port 3001)
+[React Frontend] ←→ [Django Backend] ←→ [PostgreSQL Database]
+    ↓                    ↓                    ↓
+[Redis Cache]      [Gunicorn WSGI]    [Data Persistence]
+    ↓                    ↓                    ↓
+[Prometheus] ←→ [Grafana Dashboard] ←→ [Monitoring Data]
 ```
 
-## 📊 Monitoring & Observability
+### Service Ports
 
-### Prometheus Metrics
+- **80/443**: Nginx (public access)
+- **8000**: Django (internal)
+- **5173**: React dev server (development only)
+- **5432**: PostgreSQL (internal)
+- **6379**: Redis (internal)
+- **9090**: Prometheus (internal)
+- **3000**: Grafana (internal)
 
-Access Prometheus at `http://localhost:9090` to view:
+## Monitoring Setup
 
-- Application metrics
-- Database performance
-- Nginx access logs
-- System resource usage
+### Prometheus Configuration
 
-### Grafana Dashboards
+The monitoring stack includes:
 
-Access Grafana at `http://localhost:3001`:
+- **Prometheus**: Metrics collection
+- **Grafana**: Dashboard visualization
+- **Node Exporter**: Host system metrics (optional)
 
-- Default credentials: `admin` / `your-grafana-password`
-- Pre-configured dashboards for:
-  - Application performance
-  - Database metrics
-  - System resources
-  - Error rates
+### Accessing Monitoring
 
-### Health Checks
+```bash
+# Check Prometheus targets
+curl http://localhost:9090/api/v1/targets
 
-All services include health check endpoints:
+# Access Grafana (if exposed)
+# Default credentials: admin/admin
+# URL: http://your-domain.com:3000 (if exposed)
+```
 
-- Application: `https://your-domain.com/health/`
-- API: `https://your-domain.com/api/health/`
-- Database: Internal health checks
-- Redis: Internal health checks
+### Custom Dashboards
 
-## 🔒 Security Features
+1. Access Grafana at `http://localhost:3000`
+2. Import dashboards from `monitoring/grafana/provisioning/dashboards/`
+3. Configure data sources to point to Prometheus
 
-### Implemented Security Measures
+## Security Features
 
-1. **HTTPS Enforcement**
+### Network Security
 
-   - SSL/TLS termination
-   - HSTS headers
-   - Secure cookie settings
+- All internal services run on Docker network
+- Only Nginx exposed to internet
+- Firewall rules recommended for additional security
 
-2. **Security Headers**
+### Application Security
 
-   - X-Frame-Options: SAMEORIGIN
-   - X-Content-Type-Options: nosniff
-   - X-XSS-Protection: 1; mode=block
-   - Content-Security-Policy
-   - Referrer-Policy
+- HTTPS enforcement
+- Security headers (HSTS, CSP, X-Frame-Options)
+- CSRF protection
+- Rate limiting on API endpoints
+- Non-root container users
 
-3. **Rate Limiting**
+### Database Security
 
-   - API endpoints: 10 requests/second
-   - Admin login: 1 request/second
-   - Burst protection
+- PostgreSQL with strong authentication
+- Network isolation
+- Regular backups with encryption
 
-4. **Access Control**
+### SSL/TLS Configuration
 
-   - Non-root containers
-   - Minimal container permissions
-   - Network isolation
-   - Localhost-only database access
+- TLS 1.2+ only
+- Strong cipher suites
+- HSTS headers
+- Perfect Forward Secrecy
 
-5. **Input Validation**
-   - CSRF protection
-   - SQL injection prevention
-   - XSS protection
+## Deployment Commands
 
-## 🚀 Deployment Commands
+### Basic Commands
 
-### Production Deployment
+```bash
+# Start production environment
+./docker-startup.sh production
 
-```powershell
-# Full production deployment with monitoring
-.\docker-startup.ps1 production
+# View logs
+./docker-startup.sh logs
 
-# Deploy with safety checks
-.\scripts\deploy.ps1
+# Stop all services
+./docker-startup.sh stop
+
+# Check status
+./docker-startup.sh status
+
+# Rebuild containers
+./docker-startup.sh rebuild
+```
+
+### Advanced Deployment
+
+```bash
+# Full deployment with health checks
+./scripts/deploy.sh deploy
 
 # Check deployment status
-.\scripts\deploy.ps1 status
+./scripts/deploy.sh status
+
+# Rollback to previous version
+./scripts/deploy.sh rollback
 ```
 
-### Database Management
+### Backup and Recovery
 
-```powershell
-# Create backup
-.\docker-startup.ps1 backup
+```bash
+# Create database backup
+./scripts/backup.sh
 
-# Manual backup
-.\scripts\backup.ps1
+# Create backup with custom retention
+./scripts/backup.sh ./backups 60  # 60 days retention
 
-# Restore from backup
-.\scripts\deploy.ps1 rollback
+# List available backups
+ls -la backups/
 ```
 
-### Service Management
-
-```powershell
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Restart specific service
-docker-compose -f docker-compose.prod.yml restart django-web
-
-# Scale services
-docker-compose -f docker-compose.prod.yml up -d --scale django-web=3
-```
-
-## 📈 Performance Optimizations
-
-### Django Backend
-
-- Gunicorn with gevent workers
-- 4 worker processes
-- Connection pooling
-- Static file optimization
-- Database query optimization
-
-### React Frontend
-
-- Nginx with gzip compression
-- Static asset caching (1 year)
-- Client-side routing
-- Optimized bundle size
-
-### Database
-
-- Connection pooling
-- Query optimization
-- Indexed fields
-- Regular maintenance
-
-### Caching
-
-- Redis for session storage
-- Redis for application cache
-- Nginx proxy caching
-- Browser caching
-
-## 🔧 Maintenance
+## Maintenance
 
 ### Regular Tasks
 
-1. **Daily**
+```bash
+# Daily: Check service health
+./docker-startup.sh status
 
-   - Check application logs
-   - Monitor resource usage
-   - Verify backup completion
+# Weekly: Create backups
+./scripts/backup.sh
 
-2. **Weekly**
+# Monthly: Update containers
+docker-compose -f docker-compose.prod.yml pull
+./scripts/deploy.sh deploy
 
-   - Review security logs
-   - Update dependencies
-   - Performance analysis
-
-3. **Monthly**
-   - SSL certificate renewal
-   - Database maintenance
-   - Security updates
-
-### Backup Strategy
-
-- **Automated**: Daily database backups
-- **Retention**: 30 days
-- **Compression**: Gzip compression
-- **Location**: Local + offsite (recommended)
-
-### Update Process
-
-```powershell
-# 1. Create backup
-.\docker-startup.ps1 backup
-
-# 2. Pull latest code
-git pull origin main
-
-# 3. Deploy with rollback capability
-.\scripts\deploy.ps1 deploy
-
-# 4. Verify deployment
-.\scripts\deploy.ps1 status
+# Quarterly: Review logs and metrics
+./docker-startup.sh logs
 ```
 
-## 🚨 Troubleshooting
+### System Updates
+
+```bash
+# Update system packages
+sudo apt update && sudo apt upgrade -y
+
+# Update Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Update Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+### Log Management
+
+```bash
+# View application logs
+./docker-startup.sh logs
+
+# View specific service logs
+docker-compose -f docker-compose.prod.yml logs django-web
+docker-compose -f docker-compose.prod.yml logs nginx
+
+# Rotate logs (if needed)
+sudo logrotate /etc/logrotate.d/docker
+```
+
+### Performance Monitoring
+
+```bash
+# Check resource usage
+docker stats
+
+# Monitor disk usage
+df -h
+du -sh backups/ logs/
+
+# Check memory usage
+free -h
+```
+
+## Troubleshooting
 
 ### Common Issues
 
-1. **SSL Certificate Issues**
+#### 1. Services Not Starting
 
-   ```bash
-   # Check certificate validity
-   openssl x509 -in nginx/ssl/cert.pem -text -noout
+```bash
+# Check Docker status
+docker info
 
-   # Renew Let's Encrypt certificate
-   sudo certbot renew
-   ```
+# Check container logs
+./docker-startup.sh logs
 
-2. **Database Connection Issues**
+# Check system resources
+free -h
+df -h
+```
 
-   ```bash
-   # Check database status
-   docker-compose -f docker-compose.prod.yml exec db pg_isready
+#### 2. Database Connection Issues
 
-   # View database logs
-   docker-compose -f docker-compose.prod.yml logs db
-   ```
+```bash
+# Check database container
+docker-compose -f docker-compose.prod.yml ps db
 
-3. **Application Errors**
+# Check database logs
+docker-compose -f docker-compose.prod.yml logs db
 
-   ```bash
-   # View application logs
-   docker-compose -f docker-compose.prod.yml logs django-web
+# Test database connection
+docker-compose -f docker-compose.prod.yml exec db psql -U hermes_prod_user -d hermes_production
+```
 
-   # Check application health
-   curl -f https://your-domain.com/health/
-   ```
+#### 3. SSL Certificate Issues
 
-4. **Performance Issues**
+```bash
+# Check certificate validity
+openssl x509 -in nginx/ssl/cert.pem -text -noout
 
-   ```bash
-   # Check resource usage
-   docker stats
+# Check certificate permissions
+ls -la nginx/ssl/
 
-   # View Prometheus metrics
-   curl http://localhost:9090/api/v1/query?query=up
-   ```
+# Test SSL configuration
+openssl s_client -connect your-domain.com:443 -servername your-domain.com
+```
+
+#### 4. Performance Issues
+
+```bash
+# Check resource usage
+docker stats --no-stream
+
+# Check slow queries
+docker-compose -f docker-compose.prod.yml exec db psql -U hermes_prod_user -d hermes_production -c "SELECT * FROM pg_stat_activity WHERE state = 'active';"
+
+# Check Nginx access logs
+docker-compose -f docker-compose.prod.yml exec nginx tail -f /var/log/nginx/access.log
+```
 
 ### Emergency Procedures
 
-1. **Service Down**
+#### Complete System Restart
 
-   ```powershell
-   # Restart all services
-   docker-compose -f docker-compose.prod.yml restart
+```bash
+# Stop all services
+./docker-startup.sh stop
 
-   # Check service health
-   docker-compose -f docker-compose.prod.yml ps
-   ```
+# Restart Docker
+sudo systemctl restart docker
 
-2. **Database Issues**
+# Start production environment
+./docker-startup.sh production
+```
 
-   ```powershell
-   # Restore from backup
-   .\scripts\deploy.ps1 rollback
-   ```
+#### Database Recovery
 
-3. **Security Incident**
+```bash
+# Stop services
+./docker-startup.sh stop
 
-   ```powershell
-   # Stop all services
-   .\docker-startup.ps1 stop
+# Start database only
+docker-compose -f docker-compose.prod.yml up -d db
 
-   # Review logs for suspicious activity
-   docker-compose -f docker-compose.prod.yml logs
-   ```
+# Restore from backup
+gunzip -c backups/hermes_backup_YYYYMMDD_HHMMSS.sql.gz | \
+docker-compose -f docker-compose.prod.yml exec -T db psql -U hermes_prod_user -d hermes_production
 
-## 📋 Checklist
+# Start all services
+./docker-startup.sh production
+```
 
-### Pre-Deployment
+#### Emergency Rollback
 
-- [ ] Environment variables configured
-- [ ] SSL certificates installed
-- [ ] Domain DNS configured
-- [ ] Database backup strategy in place
-- [ ] Monitoring configured
-- [ ] Security headers tested
+```bash
+# Rollback to previous deployment
+./scripts/deploy.sh rollback
+```
 
-### Post-Deployment
+### Support and Logs
 
-- [ ] Application accessible via HTTPS
-- [ ] All health checks passing
-- [ ] Monitoring dashboards working
-- [ ] Backup system tested
-- [ ] Performance benchmarks met
-- [ ] Security scan completed
+#### Useful Log Locations
 
-### Ongoing Maintenance
+- **Application logs**: `docker-compose -f docker-compose.prod.yml logs`
+- **Nginx logs**: `docker-compose -f docker-compose.prod.yml logs nginx`
+- **Database logs**: `docker-compose -f docker-compose.prod.yml logs db`
+- **System logs**: `sudo journalctl -u docker`
 
-- [ ] Regular backups running
-- [ ] SSL certificates renewed
-- [ ] Security updates applied
-- [ ] Performance monitored
-- [ ] Logs reviewed
-- [ ] Dependencies updated
+#### Debugging Commands
 
-## 📞 Support
+```bash
+# Check all container statuses
+docker ps -a
 
-For production issues:
+# Check network connectivity
+docker network ls
+docker network inspect olymp_hermes-network
 
-1. Check the troubleshooting section
-2. Review application logs
-3. Check monitoring dashboards
-4. Contact system administrator
+# Check volume mounts
+docker volume ls
+docker volume inspect olymp_postgres_data
 
-## 🔗 Useful Links
+# Execute commands in containers
+docker-compose -f docker-compose.prod.yml exec django-web python manage.py shell
+docker-compose -f docker-compose.prod.yml exec db psql -U hermes_prod_user -d hermes_production
+```
+
+## Additional Resources
 
 - [Docker Documentation](https://docs.docker.com/)
-- [Django Security](https://docs.djangoproject.com/en/stable/topics/security/)
-- [Nginx Configuration](https://nginx.org/en/docs/)
-- [Prometheus Monitoring](https://prometheus.io/docs/)
-- [Grafana Dashboards](https://grafana.com/docs/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Nginx Documentation](https://nginx.org/en/docs/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Prometheus Documentation](https://prometheus.io/docs/)
+- [Grafana Documentation](https://grafana.com/docs/)
+
+For additional support, check the logs and refer to the troubleshooting section above.
