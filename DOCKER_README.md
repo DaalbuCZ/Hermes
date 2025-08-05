@@ -34,6 +34,23 @@ Olymp/
    - Backend API: http://localhost:8000
    - Django Admin: http://localhost:3000/admin
 
+### Full Production Environment (Recommended)
+
+For production deployment with monitoring, security, and performance optimizations:
+
+1. **Setup production environment:**
+
+   ```powershell
+   .\docker-startup.ps1 production
+   ```
+
+2. **Access the application:**
+   - Application: https://your-domain.com
+   - Monitoring: http://localhost:9090 (Prometheus)
+   - Dashboard: http://localhost:3001 (Grafana)
+
+**For detailed production setup, see [PRODUCTION_README.md](PRODUCTION_README.md)**
+
 ### Development Environment
 
 1. **Start development environment with hot reloading:**
