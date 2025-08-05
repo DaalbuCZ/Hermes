@@ -17,6 +17,8 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from tests import views
 from tests.api import api
 
@@ -28,3 +30,11 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", api.urls),  # Add the API urls
 ]
+
+# Serve static files in development and production
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    # In production, static files should be served by the web server
+    # But for Docker setup, we'll serve them through Django
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -28,7 +28,7 @@ Write-Host "Collecting static files..." -ForegroundColor Yellow
 docker compose exec django-web python manage.py collectstatic --noinput
 
 # Create superuser if needed (uncomment the line below if you want to create one)
-# docker compose exec django-web python manage.py createsuperuser
+# docker compose exec django-web python manage.py createsuperuser --username admin --email admin@example.com --noinput
 
 Write-Host "Hermes is now running at http://localhost:8000" -ForegroundColor Green
 Write-Host "To stop the containers, run: docker compose down" -ForegroundColor Cyan 
