@@ -656,21 +656,26 @@ def save_ladder_test(request, person_id: int, data: dict = Body(...)):
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
 
-        score = calculate_score(
-            person.age,
-            person.gender,
-            "ladder",
-            data.get("ladder_time_1"),
-            data.get("ladder_time_2")
-        )
-        # print(f"Calculated score: {score}")
-
-        if score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
-                status=422
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None:
+            # Person doesn't have required data, save with score 0
+            score = 0
+        else:
+            score = calculate_score(
+                person.age,
+                person.gender,
+                "ladder",
+                data.get("ladder_time_1"),
+                data.get("ladder_time_2")
             )
+            # print(f"Calculated score: {score}")
+
+            if score is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
+                    status=422
+                )
 
         test_result = get_or_create_test_result(
             person,
@@ -717,18 +722,31 @@ def save_brace_test(request, person_id: int, data: dict = Body(...)):
             request, {"detail": "Invalid times - each time must be a number or null"}, status=422
         )
 
-    test_result = get_or_create_test_result(
-        person,
-        event,
-        brace_time_1=data.get("brace_time_1"),
-        brace_time_2=data.get("brace_time_2"),
-        brace_score=calculate_score(
+    # Check if person has required data for score calculation
+    if person.age is None or person.gender is None:
+        # Person doesn't have required data, save with score 0
+        score = 0
+    else:
+        score = calculate_score(
             person.age,
             person.gender,
             "brace",
             data.get("brace_time_1"),
             data.get("brace_time_2")
-        ),
+        )
+        if score is None:
+            return api.create_response(
+                request,
+                {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
+                status=422
+            )
+
+    test_result = get_or_create_test_result(
+        person,
+        event,
+        brace_time_1=data.get("brace_time_1"),
+        brace_time_2=data.get("brace_time_2"),
+        brace_score=score,
         test_name=event.name,
         test_date=date.today(),
         team=event.team,
@@ -758,19 +776,25 @@ def save_hexagon_test(request, person_id: int, data: dict = Body(...)):
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
-        score = calculate_score(
-            person.age,
-            person.gender,
-            "hexagon",
-            data.get("hexagon_time_cw"),
-            data.get("hexagon_time_ccw")
-        )
-        if score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
-                status=422
+        
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None:
+            # Person doesn't have required data, save with score 0
+            score = 0
+        else:
+            score = calculate_score(
+                person.age,
+                person.gender,
+                "hexagon",
+                data.get("hexagon_time_cw"),
+                data.get("hexagon_time_ccw")
             )
+            if score is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid times - they must be within valid ranges for the athlete's age"},
+                    status=422
+                )
         test_result = get_or_create_test_result(
             person,
             event,
@@ -804,45 +828,52 @@ def save_y_test(request, person_id: int, data: dict = Body(...)):
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
-        y_test_score = calculate_score(
-            person.age,
-            person.gender,
-            "y_test",
-            person.latest_height,
-            data.get("y_test_ll_front"),
-            data.get("y_test_ll_left"),
-            data.get("y_test_ll_right"),
-            data.get("y_test_rl_front"),
-            data.get("y_test_rl_left"),
-            data.get("y_test_rl_right"),
-            data.get("y_test_la_left"),
-            data.get("y_test_la_front"),
-            data.get("y_test_la_back"),
-            data.get("y_test_ra_right"),
-            data.get("y_test_ra_front"),
-            data.get("y_test_ra_back")
-        )
-        y_test_index = calculate_y_test_index(
-            person.latest_height,
-            data.get("y_test_ll_front"),
-            data.get("y_test_ll_left"),
-            data.get("y_test_ll_right"),
-            data.get("y_test_rl_front"),
-            data.get("y_test_rl_left"),
-            data.get("y_test_rl_right"),
-            data.get("y_test_la_left"),
-            data.get("y_test_la_front"),
-            data.get("y_test_la_back"),
-            data.get("y_test_ra_right"),
-            data.get("y_test_ra_front"),
-            data.get("y_test_ra_back")
-        )
-        if y_test_score is None or y_test_index is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid Y test values - check input data"},
-                status=422
+        
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None or person.latest_height is None:
+            # Person doesn't have required data, save with score 0
+            y_test_score = 0
+            y_test_index = 0
+        else:
+            y_test_score = calculate_score(
+                person.age,
+                person.gender,
+                "y_test",
+                person.latest_height,
+                data.get("y_test_ll_front"),
+                data.get("y_test_ll_left"),
+                data.get("y_test_ll_right"),
+                data.get("y_test_rl_front"),
+                data.get("y_test_rl_left"),
+                data.get("y_test_rl_right"),
+                data.get("y_test_la_left"),
+                data.get("y_test_la_front"),
+                data.get("y_test_la_back"),
+                data.get("y_test_ra_right"),
+                data.get("y_test_ra_front"),
+                data.get("y_test_ra_back")
             )
+            y_test_index = calculate_y_test_index(
+                person.latest_height,
+                data.get("y_test_ll_front"),
+                data.get("y_test_ll_left"),
+                data.get("y_test_ll_right"),
+                data.get("y_test_rl_front"),
+                data.get("y_test_rl_left"),
+                data.get("y_test_rl_right"),
+                data.get("y_test_la_left"),
+                data.get("y_test_la_front"),
+                data.get("y_test_la_back"),
+                data.get("y_test_ra_right"),
+                data.get("y_test_ra_front"),
+                data.get("y_test_ra_back")
+            )
+            if y_test_score is None or y_test_index is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid Y test values - check input data"},
+                    status=422
+                )
         test_result = get_or_create_test_result(
             person,
             event,
@@ -893,20 +924,26 @@ def save_medicimbal_test(request, person_id: int, data: dict = Body(...)):
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
-        score = calculate_score(
-            person.age,
-            person.gender,
-            "medicimbal",
-            data.get("medicimbal_throw_1"),
-            data.get("medicimbal_throw_2"),
-            data.get("medicimbal_throw_3")
-        )
-        if score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid throws - they must be within valid ranges for the athlete's age"},
-                status=422
+        
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None:
+            # Person doesn't have required data, save with score 0
+            score = 0
+        else:
+            score = calculate_score(
+                person.age,
+                person.gender,
+                "medicimbal",
+                data.get("medicimbal_throw_1"),
+                data.get("medicimbal_throw_2"),
+                data.get("medicimbal_throw_3")
             )
+            if score is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid throws - they must be within valid ranges for the athlete's age"},
+                    status=422
+                )
         test_result = get_or_create_test_result(
             person,
             event,
@@ -949,18 +986,24 @@ def save_jet_test(request, person_id: int, data: dict = Body(...)):
                 request, {"detail": "jet_laps and jet_sides are required"}, status=422
             )
         jet_distance = jet_laps * 40 + jet_sides * 10
-        score = calculate_score(
-            person.age,
-            person.gender,
-            "jet",
-            jet_distance
-        )
-        if score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid jet test values - check input data"},
-                status=422
+        
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None:
+            # Person doesn't have required data, save with score 0
+            score = 0
+        else:
+            score = calculate_score(
+                person.age,
+                person.gender,
+                "jet",
+                jet_distance
             )
+            if score is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid jet test values - check input data"},
+                    status=422
+                )
         test_result = get_or_create_test_result(
             person,
             event,
@@ -1001,20 +1044,26 @@ def save_triple_jump_test(request, person_id: int, data: dict = Body(...)):
             return api.create_response(
                 request, {"detail": "No active test found for this profile's team"}, status=400
             )
-        score = calculate_score(
-            person.age,
-            person.gender,
-            "triple_jump",
-            data.get("triple_jump_distance_1"),
-            data.get("triple_jump_distance_2"),
-            data.get("triple_jump_distance_3")
-        )
-        if score is None:
-            return api.create_response(
-                request,
-                {"detail": "Invalid jump distances - they must be within valid ranges for the athlete's age"},
-                status=422
+        
+        # Check if person has required data for score calculation
+        if person.age is None or person.gender is None:
+            # Person doesn't have required data, save with score 0
+            score = 0
+        else:
+            score = calculate_score(
+                person.age,
+                person.gender,
+                "triple_jump",
+                data.get("triple_jump_distance_1"),
+                data.get("triple_jump_distance_2"),
+                data.get("triple_jump_distance_3")
             )
+            if score is None:
+                return api.create_response(
+                    request,
+                    {"detail": "Invalid jump distances - they must be within valid ranges for the athlete's age"},
+                    status=422
+                )
         test_result = get_or_create_test_result(
             person,
             event,
@@ -1068,19 +1117,25 @@ def save_beep_test_batch(request, items: List[BeepTestBatchItem]):
                 ))
                 continue
             beep_test_total_laps = calculate_beep_test_total_laps(item.beep_test_level, item.beep_test_laps)
-            beep_test_score = calculate_score(
-                person.age,
-                person.gender,
-                "beep_test",
-                beep_test_total_laps
-            )
-            if beep_test_score is None:
-                responses.append(BeepTestBatchResponse(
-                    person_id=item.person_id,
-                    success=False,
-                    error="Invalid beep test values - check input data"
-                ))
-                continue
+            
+            # Check if person has required data for score calculation
+            if person.age is None or person.gender is None:
+                # Person doesn't have required data, save with score 0
+                beep_test_score = 0
+            else:
+                beep_test_score = calculate_score(
+                    person.age,
+                    person.gender,
+                    "beep_test",
+                    beep_test_total_laps
+                )
+                if beep_test_score is None:
+                    responses.append(BeepTestBatchResponse(
+                        person_id=item.person_id,
+                        success=False,
+                        error="Invalid beep test values - check input data"
+                    ))
+                    continue
             test_result = get_or_create_test_result(
                 person,
                 event,

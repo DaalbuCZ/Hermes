@@ -23,9 +23,12 @@ def recalculate_scores(user):
             gender = test_result.person.gender
             time_1 = test_result.ladder_time_1
             time_2 = test_result.ladder_time_2
-            test_result.ladder_score = calculate_score(
-                age, gender, "ladder", time_1, time_2
-            )
+            if age is not None and gender is not None:
+                test_result.ladder_score = calculate_score(
+                    age, gender, "ladder", time_1, time_2
+                )
+            else:
+                test_result.ladder_score = 0
 
         # Recalculate brace score
         if test_result.brace_time_1 and test_result.brace_time_2:
@@ -33,9 +36,12 @@ def recalculate_scores(user):
             gender = test_result.person.gender
             time_1 = test_result.brace_time_1
             time_2 = test_result.brace_time_2
-            test_result.brace_score = calculate_score(
-                age, gender, "brace", time_1, time_2
-            )
+            if age is not None and gender is not None:
+                test_result.brace_score = calculate_score(
+                    age, gender, "brace", time_1, time_2
+                )
+            else:
+                test_result.brace_score = 0
 
         # Recalculate hexagon score
         if test_result.hexagon_time_cw and test_result.hexagon_time_ccw:
@@ -43,9 +49,12 @@ def recalculate_scores(user):
             gender = test_result.person.gender
             time_cw = test_result.hexagon_time_cw
             time_ccw = test_result.hexagon_time_ccw
-            test_result.hexagon_score = calculate_score(
-                age, gender, "hexagon", time_cw, time_ccw
-            )
+            if age is not None and gender is not None:
+                test_result.hexagon_score = calculate_score(
+                    age, gender, "hexagon", time_cw, time_ccw
+                )
+            else:
+                test_result.hexagon_score = 0
 
         # Recalculate medicimbal score
         if (
@@ -58,9 +67,12 @@ def recalculate_scores(user):
             throw_1 = test_result.medicimbal_throw_1
             throw_2 = test_result.medicimbal_throw_2
             throw_3 = test_result.medicimbal_throw_3
-            test_result.medicimbal_score = calculate_score(
-                age, gender, "medicimbal", throw_1, throw_2, throw_3
-            )
+            if age is not None and gender is not None:
+                test_result.medicimbal_score = calculate_score(
+                    age, gender, "medicimbal", throw_1, throw_2, throw_3
+                )
+            else:
+                test_result.medicimbal_score = 0
 
         # Recalculate jet score
         if test_result.jet_laps and test_result.jet_sides:
@@ -69,7 +81,10 @@ def recalculate_scores(user):
             laps = test_result.jet_laps
             sides = test_result.jet_sides
             jet_distance = laps * 40 + sides * 10
-            test_result.jet_score = calculate_score(age, gender, "jet", jet_distance)
+            if age is not None and gender is not None:
+                test_result.jet_score = calculate_score(age, gender, "jet", jet_distance)
+            else:
+                test_result.jet_score = 0
             test_result.jet_distance = jet_distance
 
         # Recalculate y-test score and index
@@ -103,39 +118,43 @@ def recalculate_scores(user):
             ra_front = test_result.y_test_ra_front
             ra_back = test_result.y_test_ra_back
 
-            test_result.y_test_score = calculate_score(
-                age,
-                gender,
-                "y_test",
-                height,
-                ll_front,
-                ll_left,
-                ll_right,
-                rl_front,
-                rl_right,
-                rl_left,
-                la_left,
-                la_front,
-                la_back,
-                ra_right,
-                ra_front,
-                ra_back,
-            )
-            test_result.y_test_index = calculate_y_test_index(
-                height,
-                ll_front,
-                ll_left,
-                ll_right,
-                rl_front,
-                rl_right,
-                rl_left,
-                la_left,
-                la_front,
-                la_back,
-                ra_right,
-                ra_front,
-                ra_back,
-            )
+            if age is not None and gender is not None and height is not None:
+                test_result.y_test_score = calculate_score(
+                    age,
+                    gender,
+                    "y_test",
+                    height,
+                    ll_front,
+                    ll_left,
+                    ll_right,
+                    rl_front,
+                    rl_right,
+                    rl_left,
+                    la_left,
+                    la_front,
+                    la_back,
+                    ra_right,
+                    ra_front,
+                    ra_back,
+                )
+                test_result.y_test_index = calculate_y_test_index(
+                    height,
+                    ll_front,
+                    ll_left,
+                    ll_right,
+                    rl_front,
+                    rl_right,
+                    rl_left,
+                    la_left,
+                    la_front,
+                    la_back,
+                    ra_right,
+                    ra_front,
+                    ra_back,
+                )
+            else:
+                test_result.y_test_score = 0
+                test_result.y_test_index = 0
 
         # Recalculate beep test score
         if test_result.beep_test_laps and test_result.beep_test_level:
@@ -144,9 +163,12 @@ def recalculate_scores(user):
             laps = test_result.beep_test_laps
             level = test_result.beep_test_level
             total_laps = calculate_beep_test_total_laps(level, laps)
-            test_result.beep_test_score = calculate_score(
-                age, gender, "beep_test", total_laps
-            )
+            if age is not None and gender is not None:
+                test_result.beep_test_score = calculate_score(
+                    age, gender, "beep_test", total_laps
+                )
+            else:
+                test_result.beep_test_score = 0
             test_result.beep_test_total_laps = total_laps
 
         # Recalculate triple jump score
@@ -160,9 +182,12 @@ def recalculate_scores(user):
             jump_1 = test_result.triple_jump_distance_1
             jump_2 = test_result.triple_jump_distance_2
             jump_3 = test_result.triple_jump_distance_3
-            test_result.triple_jump_score = calculate_score(
-                age, gender, "triple_jump", jump_1, jump_2, jump_3
-            )
+            if age is not None and gender is not None:
+                test_result.triple_jump_score = calculate_score(
+                    age, gender, "triple_jump", jump_1, jump_2, jump_3
+                )
+            else:
+                test_result.triple_jump_score = 0
 
         # Calculate composite scores
         # Strength score
