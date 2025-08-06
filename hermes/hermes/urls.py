@@ -21,6 +21,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from tests import views
 from tests.api import api
+import sys
+import os
+
+# Add the health check view
+sys.path.append(os.path.join(settings.BASE_DIR))
+from health_check import health_check
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -29,6 +35,7 @@ urlpatterns = [
     path("unicorn/", include("django_unicorn.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", api.urls),  # Add the API urls
+    path("health/", health_check, name="health_check"),  # Health check endpoint
 ]
 
 # Serve static files in development and production

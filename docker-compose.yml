@@ -1,20 +1,4 @@
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: ${DATABASE_NAME:-hermes_db}
-      POSTGRES_USER: ${DATABASE_USERNAME:-hermes_user}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - hermes/env.example
-    networks:
-      - hermes-network
-
   # Django Backend
   django-web:
     build:
@@ -23,8 +7,6 @@ services:
     container_name: hermes-django
     ports:
       - "8000:8000"
-    depends_on:
-      - db
     environment:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-your-secret-key-here}
       DEBUG: ${DEBUG:-False}
@@ -34,7 +16,7 @@ services:
       DATABASE_NAME: ${DATABASE_NAME:-hermes_db}
       DATABASE_USERNAME: ${DATABASE_USERNAME:-hermes_user}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-hermes_password}
-      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_HOST: ${DATABASE_HOST:-localhost}
       DATABASE_PORT: ${DATABASE_PORT:-5432}
     env_file:
       - hermes/env.example
@@ -61,7 +43,6 @@ services:
       - hermes-network
 
 volumes:
-  postgres_data:
   static_volume:
 
 networks:
