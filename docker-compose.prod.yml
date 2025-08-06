@@ -12,10 +12,12 @@ services:
       - hermes-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-CHANGE_THIS_REDIS_PASSWORD}", "--raw", "incr", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
+    env_file:
+      - hermes/env.production
     deploy:
       resources:
         limits:
@@ -145,6 +147,8 @@ services:
     networks:
       - hermes-network
     restart: unless-stopped
+    env_file:
+      - hermes/env.production
 
 volumes:
   redis_data:

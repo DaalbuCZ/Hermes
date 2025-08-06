@@ -49,9 +49,11 @@ INSTALLED_APPS = [
     "widget_tweaks",
     "ninja",  # Add this line
     "corsheaders",  # Add this line
+    "django_prometheus",  # Add Prometheus metrics support
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",  # Add Prometheus middleware at the top
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",  # Add this line - make sure it's at the top
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -60,6 +62,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",  # Add Prometheus middleware at the bottom
 ]
 
 ROOT_URLCONF = "hermes.urls"

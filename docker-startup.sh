@@ -155,7 +155,7 @@ case "${1:-}" in
         docker-compose -f docker-compose.prod.yml up --build -d
         print_status "Production environment started. Check logs with: ./docker-startup.sh logs"
         ;;
-    "stop")
+    "stop | down")
         print_header "Stopping All Containers"
         check_docker
         check_docker_compose
