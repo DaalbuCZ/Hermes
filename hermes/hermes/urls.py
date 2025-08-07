@@ -36,7 +36,7 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", api.urls),  # Add the API urls
     path("health/", health_check, name="health_check"),  # Health check endpoint
-    path("", include("django_prometheus.urls")),  # Add Prometheus metrics endpoint
+    path("metrics/", include("django_prometheus.urls")),  # Add Prometheus metrics endpoint
 ]
 
 # Serve static files in development and production

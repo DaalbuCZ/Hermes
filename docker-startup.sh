@@ -145,17 +145,25 @@ case "${1:-}" in
         # Load environment variables from env.production into current session
         print_status "Loading environment variables..."
         if [ -f "hermes/env.production" ]; then
-            set -a  # automatically export all variables
-            source "hermes/env.production"
-            set +a  # turn off automatic export
+            # Load and export all environment variables from env.production
+            while IFS='=' read -r key value; do
+                # Skip comments and empty lines
+                if [[ ! "$key" =~ ^#.*$ ]] && [[ -n "$key" ]]; then
+                    # Remove quotes from value if present
+                    value=$(echo "$value" | sed 's/^"//;s/"$//;s/^'"'"'//;s/'"'"'$//')
+                    export "$key=$value"
+                fi
+            done < "hermes/env.production"
             print_status "✓ Environment variables loaded"
+            print_status "REDIS_PASSWORD: $REDIS_PASSWORD"
+            print_status "GRAFANA_PASSWORD: $GRAFANA_PASSWORD"
         fi
         
         print_status "Starting production containers..."
         docker-compose -f docker-compose.prod.yml up --build -d
         print_status "Production environment started. Check logs with: ./docker-startup.sh logs"
         ;;
-    "stop | down")
+    "stop" | "down")
         print_header "Stopping All Containers"
         check_docker
         check_docker_compose

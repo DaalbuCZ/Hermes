@@ -2,8 +2,10 @@ services:
   # Redis for caching and sessions
   redis:
     image: redis:7-alpine
-    container_name: hermes-redis-prod
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-CHANGE_THIS_REDIS_PASSWORD}
+    container_name: hermes-redis-prod 
+    env_file:
+      - hermes/env.production
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     ports:
       - "127.0.0.1:6379:6379" # Only bind to localhost
     volumes:
@@ -12,12 +14,11 @@ services:
       - hermes-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-CHANGE_THIS_REDIS_PASSWORD}", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--raw", "incr", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
-    env_file:
-      - hermes/env.production
+   
     deploy:
       resources:
         limits:
@@ -36,26 +37,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    environment:
-      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
-      DEBUG: ${DEBUG:-False}
-      DJANGO_LOGLEVEL: ${DJANGO_LOGLEVEL:-WARNING}
-      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
-      DATABASE_ENGINE: ${DATABASE_ENGINE:-postgresql}
-      DATABASE_NAME: ${DATABASE_NAME:-hermes_production}
-      DATABASE_USERNAME: ${DATABASE_USERNAME:-hermes_prod_user}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_HOST: ${DATABASE_HOST:-localhost}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
-      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-False}
-      SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-31536000}
-      SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:-True}
-      SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:-True}
-      SECURE_BROWSER_XSS_FILTER: ${SECURE_BROWSER_XSS_FILTER:-True}
-      SECURE_CONTENT_TYPE_NOSNIFF: ${SECURE_CONTENT_TYPE_NOSNIFF:-True}
-      X_FRAME_OPTIONS: ${X_FRAME_OPTIONS:-DENY}
     env_file:
       - hermes/env.production
     volumes:
@@ -91,6 +72,15 @@ services:
     depends_on:
       django-web:
         condition: service_healthy
+    volumes:
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    command: >
+      sh -c "
+        chown nginx:nginx /etc/nginx/ssl/cert.pem /etc/nginx/ssl/key.pem 2>/dev/null || true &&
+        chmod 644 /etc/nginx/ssl/cert.pem 2>/dev/null || true &&
+        chmod 600 /etc/nginx/ssl/key.pem 2>/dev/null || true &&
+        nginx -g 'daemon off;'
+      "
     networks:
       - hermes-network
     restart: unless-stopped
@@ -138,7 +128,7 @@ services:
     ports:
       - "127.0.0.1:3001:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-CHANGE_THIS_GRAFANA_PASSWORD}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro

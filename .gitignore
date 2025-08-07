@@ -18,3 +18,5 @@
 React/rules
 React/rules/stack.mdc
 hermes/env.production
+nginx/ssl/cert.pem
+nginx/ssl/key.pem
