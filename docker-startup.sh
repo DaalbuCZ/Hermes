@@ -46,76 +46,6 @@ check_docker_compose() {
     fi
 }
 
-# Function to check and create PostgreSQL database
-check_create_database() {
-    local env_file="${1:-hermes/env.production}"
-    
-    # Check if env file exists
-    if [ ! -f "$env_file" ]; then
-        print_warning "Environment file not found: $env_file"
-        print_status "Creating from template..."
-        cp "hermes/env.example" "$env_file"
-        print_warning "Please edit $env_file with your database settings"
-        return 1
-    fi
-    
-    # Read database settings from env file
-    local db_name=""
-    local db_user=""
-    local db_password=""
-    local db_host=""
-    local db_port=""
-    
-    while IFS='=' read -r key value; do
-        case "$key" in
-            "DATABASE_NAME") db_name="$value" ;;
-            "DATABASE_USERNAME") db_user="$value" ;;
-            "DATABASE_PASSWORD") db_password="$value" ;;
-            "DATABASE_HOST") db_host="$value" ;;
-            "DATABASE_PORT") db_port="$value" ;;
-        esac
-    done < "$env_file"
-    
-    if [ -z "$db_name" ] || [ -z "$db_user" ] || [ -z "$db_password" ]; then
-        print_warning "Database settings not found in $env_file"
-        return 1
-    fi
-    
-    print_status "Checking PostgreSQL database connection..."
-    
-    # Set environment variables for psql
-    export PGUSER="$db_user"
-    export PGPASSWORD="$db_password"
-    export PGHOST="$db_host"
-    export PGPORT="${db_port:-5432}"
-    
-    # Test connection to PostgreSQL server
-    if psql -c "SELECT 1;" >/dev/null 2>&1; then
-        print_status "✓ PostgreSQL server connection successful"
-        
-        # Check if database exists
-        if psql -c "SELECT 1 FROM pg_database WHERE datname = '$db_name';" 2>/dev/null | grep -q "1"; then
-            print_status "✓ Database '$db_name' already exists"
-            return 0
-        else
-            print_warning "Database '$db_name' does not exist. Creating..."
-            
-            # Create database
-            if createdb "$db_name" 2>/dev/null; then
-                print_status "✓ Database '$db_name' created successfully"
-                return 0
-            else
-                print_error "Failed to create database '$db_name'"
-                return 1
-            fi
-        fi
-    else
-        print_error "Cannot connect to PostgreSQL server"
-        print_warning "Please ensure PostgreSQL is running and accessible"
-        return 1
-    fi
-}
-
 # Main script logic
 case "${1:-}" in
     "dev")
@@ -130,17 +60,6 @@ case "${1:-}" in
         check_docker
         check_docker_compose
         
-        # Check and create database if needed
-        if ! check_create_database "hermes/env.production"; then
-            print_warning "Database setup incomplete. Please check your configuration."
-            print_warning "You can still start the containers, but they may fail to connect to the database."
-            read -p "Continue anyway? (y/N): " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                print_error "Aborting startup."
-                exit 1
-            fi
-        fi
         
         # Load environment variables from env.production into current session
         print_status "Loading environment variables..."
