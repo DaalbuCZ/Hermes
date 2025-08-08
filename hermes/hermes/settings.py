@@ -174,10 +174,25 @@ LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 
 # Add CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # Only for development
+CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"  # Only for development
 CORS_ALLOW_CREDENTIALS = True
 
 # For production, specify the exact origins:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",  # React dev server
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "https://daalbu.software",
+    "http://localhost:5173",  # React dev server
+    "http://127.0.0.1:5173",  # React dev server alternative
+]
+
+# Allow specific headers
+CORS_ALLOWED_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
