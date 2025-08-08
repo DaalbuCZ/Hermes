@@ -136,6 +136,14 @@ class TeamSchema(Schema):
     created_at: datetime
 
 
+class TeamCreateSchema(Schema):
+    name: str
+
+
+class TeamUpdateSchema(Schema):
+    name: Optional[str] = None
+
+
 # Additional schemas
 class EventSchema(Schema):
     id: int
@@ -146,9 +154,23 @@ class EventSchema(Schema):
     created_by_id: int | None
 
 
+class EventCreateSchema(Schema):
+    name: str
+    is_active: bool
+    team_id: Optional[int] = None
+
+
+class EventUpdateSchema(Schema):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+    team_id: Optional[int] = None
+
+
 class UserSchema(Schema):
     id: int
     username: str
+    first_name: str
+    last_name: str
     is_active: bool
     is_superuser: bool  # Add superuser status
     teams: List[int]  # List of team IDs
@@ -157,6 +179,14 @@ class UserSchema(Schema):
 
 # Schema for creating a new adjudicator
 class AdjudicatorSchema(Schema):
+    username: str
+    password: str
+    first_name: str
+    last_name: str
+
+
+# Team admin create schema (separate for clarity, mirrors adjudicator)
+class TeamAdminCreateSchema(Schema):
     username: str
     password: str
     first_name: str
@@ -259,9 +289,12 @@ def get_person_results(request, person_id: int):
 
 @api.get("/teams", response=List[TeamSchema])
 def get_teams(request):
-    if not request.auth or not request.auth.is_superuser:
+    if not request.auth:
         return api.create_response(request, {"detail": "Not authorized"}, status=403)
-    return Team.objects.all()
+    if request.auth.is_superuser:
+        return Team.objects.all()
+    # Non-superusers: return only teams the user administers
+    return Team.objects.filter(admins=request.auth)
 
 
 @api.get("/team/{team_id}/results", response=List[TestResultSchema])
@@ -331,14 +364,14 @@ def delete_test_result(request, result_id: int):
 
 # Team management endpoints
 @api.post("/teams", response=TeamSchema)
-def create_team(request, team: TeamSchema):
+def create_team(request, team: TeamCreateSchema):
     if not request.auth or not request.auth.is_superuser:
         return api.create_response(request, {"detail": "Not authorized"}, status=403)
-    return Team.objects.create(**team.dict())
+    return Team.objects.create(name=team.name)
 
 
 @api.put("/team/{team_id}", response=TeamSchema)
-def update_team(request, team_id: int, team: TeamSchema):
+def update_team(request, team_id: int, team: TeamUpdateSchema):
     if not request.auth or not request.auth.is_superuser:
         return api.create_response(request, {"detail": "Not authorized"}, status=403)
     team_obj = get_object_or_404(Team, id=team_id)
@@ -405,27 +438,33 @@ def get_team_active_tests(request, team_id: int):
 
 
 @api.post("/events", response=EventSchema)
-def create_event(request, event: EventSchema):
+def create_event(request, event: EventCreateSchema):
     """Create a new active test"""
     # Deactivate all other tests for the team if this one is active
     if event.is_active and event.team_id:
         Event.objects.filter(team_id=event.team_id, is_active=True).update(
             is_active=False
         )
-    return Event.objects.create(**event.dict())
+    return Event.objects.create(
+        name=event.name,
+        is_active=event.is_active,
+        team_id=event.team_id,
+        created_by=request.auth,
+    )
 
 
 @api.put("/events/{event_id}", response=EventSchema)
-def update_event(request, event_id: int, event: EventSchema):
+def update_event(request, event_id: int, event: EventUpdateSchema):
     """Update an active test"""
     event_obj = get_object_or_404(Event, id=event_id)
-    if event.is_active and event.team_id:
-        # Deactivate other tests only if we're activating this one
-        if not event_obj.is_active:
-            Event.objects.filter(
-                team_id=event.team_id, is_active=True
-            ).update(is_active=False)
-    for key, value in event.dict(exclude_unset=True).items():
+    payload = event.dict(exclude_unset=True)
+    # If activating this event, deactivate others for its (possibly updated) team
+    new_is_active = payload.get("is_active", event_obj.is_active)
+    new_team_id = payload.get("team_id", event_obj.team_id)
+    if new_is_active and new_team_id:
+        if not event_obj.is_active or new_team_id != event_obj.team_id:
+            Event.objects.filter(team_id=new_team_id, is_active=True).exclude(id=event_obj.id).update(is_active=False)
+    for key, value in payload.items():
         setattr(event_obj, key, value)
     event_obj.save()
     return event_obj
@@ -445,13 +484,39 @@ def get_users(request):
     """Get all users - requires superuser"""
     if not request.auth.is_superuser:
         return api.create_response(request, {"detail": "Not authorized"}, status=403)
-    return User.objects.all()
+    users_qs = User.objects.all()
+    return [
+        UserSchema(
+            id=u.id,
+            username=u.username,
+            first_name=u.first_name,
+            last_name=u.last_name,
+            is_active=u.is_active,
+            is_superuser=u.is_superuser,
+            teams=[team.id for team in u.teams.all()],
+            groups=[group.name for group in u.groups.all()],
+        )
+        for u in users_qs
+    ]
 
 
 @api.get("/users/adjudicators", response=List[UserSchema])
 def get_adjudicators(request):
     """Get all adjudicators"""
-    return User.objects.filter(groups__name="Adjudicators")
+    users_qs = User.objects.filter(groups__name="Adjudicators")
+    return [
+        UserSchema(
+            id=u.id,
+            username=u.username,
+            first_name=u.first_name,
+            last_name=u.last_name,
+            is_active=u.is_active,
+            is_superuser=u.is_superuser,
+            teams=[team.id for team in u.teams.all()],
+            groups=[group.name for group in u.groups.all()],
+        )
+        for u in users_qs
+    ]
 
 
 @api.get("/users/me", response=UserSchema)
@@ -461,6 +526,8 @@ def get_current_user(request):
         return UserSchema(
             id=user.id,
             username=user.username,
+            first_name=user.first_name,
+            last_name=user.last_name,
             is_active=user.is_active,
             is_superuser=user.is_superuser,
             teams=[team.id for team in user.teams.all()],
@@ -509,6 +576,83 @@ def delete_adjudicator(request, id: int):
         user.delete()
         return {"success": True}
     return api.create_response(request, {"detail": "User is not an adjudicator"}, status=400)
+
+
+# Team Admin management endpoints
+@api.get("/users/team-admins", response=List[UserSchema])
+def get_team_admins(request):
+    """Get all team admins"""
+    users_qs = User.objects.filter(groups__name="TeamAdmin")
+    return [
+        UserSchema(
+            id=u.id,
+            username=u.username,
+            first_name=u.first_name,
+            last_name=u.last_name,
+            is_active=u.is_active,
+            is_superuser=u.is_superuser,
+            teams=[team.id for team in u.teams.all()],
+            groups=[group.name for group in u.groups.all()],
+        )
+        for u in users_qs
+    ]
+
+
+@api.post("/users/team-admins", response=UserSchema)
+def add_team_admin(request, team_admin: TeamAdminCreateSchema):
+    """Create a team admin user and add them to TeamAdmin group"""
+    username = team_admin.username
+    password = team_admin.password
+    first_name = team_admin.first_name
+    last_name = team_admin.last_name
+    if not (username and password and first_name and last_name):
+        return api.create_response(request, {"detail": "Missing fields"}, status=400)
+    if User.objects.filter(username=username).exists():
+        return api.create_response(request, {"detail": "Username already exists"}, status=400)
+    user = User.objects.create_user(
+        username=username,
+        password=password,
+        first_name=first_name,
+        last_name=last_name,
+        is_active=True,
+    )
+    group, _ = Group.objects.get_or_create(name="TeamAdmin")
+    user.groups.add(group)
+    user.save()
+    return user
+
+
+@api.get("/teams/{team_id}/admins", response=List[UserSchema])
+def get_team_admins_for_team(request, team_id: int):
+    """List admins assigned to a team"""
+    team = get_object_or_404(Team, id=team_id)
+    users_qs = team.admins.all()
+    return [
+        UserSchema(
+            id=u.id,
+            username=u.username,
+            first_name=u.first_name,
+            last_name=u.last_name,
+            is_active=u.is_active,
+            is_superuser=u.is_superuser,
+            teams=[team.id for team in u.teams.all()],
+            groups=[group.name for group in u.groups.all()],
+        )
+        for u in users_qs
+    ]
+
+
+class TeamAdminIdsSchema(Schema):
+    user_ids: List[int]
+
+
+@api.put("/teams/{team_id}/admins", response=List[UserSchema])
+def set_team_admins(request, team_id: int, body: TeamAdminIdsSchema):
+    """Replace a team's admins with provided user ids"""
+    team = get_object_or_404(Team, id=team_id)
+    users = User.objects.filter(id__in=body.user_ids)
+    team.admins.set(users)
+    return list(team.admins.all())
 
 
 # Test type specific endpoints
