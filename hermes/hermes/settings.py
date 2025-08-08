@@ -157,7 +157,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "tests", "static"),
 ]
 
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+# Allow overriding STATIC_ROOT via environment to align with Nginx/docker
+STATIC_ROOT = os.environ.get("STATIC_ROOT", os.path.join(BASE_DIR, "static"))
 
 # Static files serving in production
 if not DEBUG:
@@ -173,15 +174,36 @@ LOGIN_REDIRECT_URL = "/tests/adjudicator_dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 
-# Add CORS settings
-CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"  # Only for development
+"""CORS settings
+
+These settings ensure admin static assets (including Unfold CSS/fonts) can be
+loaded when the site is accessed via different subdomains or local dev ports.
+"""
+
+# Toggle full allow via env for quick testing or temporary mitigation
+CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"
 CORS_ALLOW_CREDENTIALS = True
 
-# For production, specify the exact origins:
+# Explicit allowlist (keep tight in production)
 CORS_ALLOWED_ORIGINS = [
+    # Production domains
     "https://daalbu.software",
-    "http://localhost:5173",  # React dev server
-    "http://127.0.0.1:5173",  # React dev server alternative
+    "https://www.daalbu.software",
+    # Local development (backend/admin)
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    # Local development (frontend dev servers)
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+# Allow subdomains of the production domain without listing each one
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https?://([a-z0-9-]+\.)*daalbu\.software$",
+    r"^https?://localhost(:\d+)?$",
+    r"^https?://127\.0\.0\.1(:\d+)?$",
 ]
 
 # Allow specific headers
